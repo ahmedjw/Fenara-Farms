@@ -82,7 +82,9 @@ export async function POST(request: Request) {
     cleanNames[id] = (names?.[id] ?? "").trim().slice(0, 28) || id;
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? site.url;
+  // site.url already resolves the env var, the Vercel domain and the local
+  // fallback, and guarantees a parseable absolute URL.
+  const baseUrl = site.url;
 
   try {
     const session = await stripe.checkout.sessions.create({

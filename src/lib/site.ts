@@ -6,6 +6,34 @@
  * Stripe expects.
  */
 
+/**
+ * Public base URL, used for metadataBase and the Stripe redirects.
+ *
+ * An environment variable can be present but empty, which is what a blank
+ * field in the Vercel dashboard gives you. `??` only catches undefined, so an
+ * empty value used to reach `new URL("")` in the root layout and fail the
+ * build with ERR_INVALID_URL. Treat empty as missing, fall back to the domain
+ * Vercel provides, and never return something `new URL()` cannot parse.
+ */
+function resolveSiteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const vercelHost =
+    process.env.NEXT_PUBLIC_VERCEL_URL?.trim() || process.env.VERCEL_URL?.trim();
+
+  const candidate = configured || (vercelHost ? `https://${vercelHost}` : "");
+  if (!candidate) return "http://localhost:3000";
+
+  const withScheme = /^https?:\/\//i.test(candidate)
+    ? candidate
+    : `https://${candidate}`;
+
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 export const site = {
   name: "Fenara Farms",
   tagline: "Rooted in history. Restored by nature. Made for today.",
@@ -14,7 +42,7 @@ export const site = {
   estate: "Andalusia, Southern Spain",
   email: "hello@fenara.com",
   instagram: "https://instagram.com/",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  url: resolveSiteUrl(),
 } as const;
 
 /**
