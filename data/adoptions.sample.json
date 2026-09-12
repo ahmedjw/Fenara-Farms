@@ -1,0 +1,18 @@
+{
+  "adoptions": [
+    {
+      "number": "FEN-2026-0001",
+      "tierId": "la-familia",
+      "trees": ["SOL-004", "SOL-005", "SOL-013"],
+      "names": { "SOL-004": "Abuela", "SOL-005": "El Grande", "SOL-013": "Marisol" },
+      "customerName": "Marisol Aguirre",
+      "email": "marisol@example.com",
+      "status": "active",
+      "season": 2026,
+      "stripeSessionId": "cs_test_preview",
+      "createdAt": "2026-09-09T10:00:00.000Z",
+      "giftFrom": "The Aguirre family",
+      "giftMessage": "For your table, from ours."
+    }
+  ]
+}
