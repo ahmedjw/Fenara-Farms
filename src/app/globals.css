@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Fenara Farms design tokens.
+
+   Palette: cool paper, deep olive, one saturated brick accent. Deliberately
+   not the warm cream and brass every artisan food brand reaches for, so the
+   grove reads as land rather than as packaging.
+
+   Radius rule, applied everywhere with no exceptions: 2px. Buttons, cards,
+   inputs, images and chips all share it. Editorial, not app-like.
+--------------------------------------------------------------------------- */
+
+@theme {
+  --color-paper: #edeee9;
+  --color-paper-raised: #f5f6f2;
+  --color-paper-sunk: #e3e5de;
+
+  --color-ink: #14181a;
+  --color-stone: #666d62;
+  --color-stone-light: #8b9186;
+
+  --color-olive: #2e3d24;
+  --color-olive-mid: #4a5d3c;
+  --color-olive-soft: #d7dccf;
+
+  --color-brick: #b33a25;
+  --color-brick-dark: #8f2c1b;
+
+  --color-line: #d3d6cd;
+  --color-line-strong: #b9bdb2;
+
+  --font-display: var(--font-eb-garamond), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-sharp: 2px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-line);
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background-color: var(--color-olive);
+    color: var(--color-paper);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brick);
+    outline-offset: 2px;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+  }
+}
+
+@layer utilities {
+  /* Display type. EB Garamond runs small, so it needs a nudge up in scale
+     and a tighter line height than a sans would at the same size. */
+  .display {
+    font-family: var(--font-display);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+  }
+
+  .display-italic {
+    font-style: italic;
+    /* Descender clearance for g, y, j, p, q in display italics. */
+    line-height: 1.12;
+    padding-bottom: 0.08em;
+  }
+
+  .rule {
+    border-top: 1px solid var(--color-line);
+  }
+
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-stone);
+  }
+
+  .prose-body p {
+    max-width: 62ch;
+  }
+}
+
+/* Paper grain. Fixed and non-interactive so it never repaints on scroll. */
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.32;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Certificate print view. Strips site chrome so "save as PDF" is usable. */
+@media print {
+  .grain,
+  header[class*="sticky"],
+  footer {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  #certificate {
+    border: 0;
+    padding: 0;
+    background: #fff;
+  }
+}
