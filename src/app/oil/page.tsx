@@ -74,8 +74,8 @@ export default function OilPage() {
       <Section className="border-t border-line">
         <div className="grid gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
           <Photo
-            src="oil-mill.jpg"
-            alt="Green olives on the branch, nearly ready for harvest at Fenara Farms"
+            src="gift-bottles.jpg"
+            alt="Olives ripening from green to purple on a branch at Fenara Farms"
             brief="The mill, or oil running from the decanter. Green, fresh, slightly messy. Process rather than product."
             size="1200 x 1500px, portrait"
             className="aspect-[4/5] w-full"
