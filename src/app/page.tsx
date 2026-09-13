@@ -7,6 +7,7 @@ import {
   Medal,
   Package,
 } from "@phosphor-icons/react/dist/ssr";
+import { EvooSeal } from "@/components/evoo-seal";
 import { Photo } from "@/components/photo";
 import { Reveal } from "@/components/reveal";
 import { GroveMap } from "@/components/grove-map";
@@ -25,8 +26,9 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero. The land fills the first screen; the message sits on it. */}
-      <section className="relative isolate flex min-h-[calc(100svh-68px)] items-end overflow-hidden">
+      {/* Hero. The photo fills the whole first screen and runs up behind the
+          floating header; the message sits low on the left, the seal on the right. */}
+      <section className="relative isolate flex min-h-[100svh] items-end overflow-hidden">
         <Photo
           src="hero-grove.jpg"
           alt="The sun setting over rows of Picual olive trees at Fenara Farms in Andalusia"
@@ -38,33 +40,41 @@ export default async function HomePage() {
         {/* Darkens the lower part of the photo so the type stays readable over bright grass. */}
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/80 via-ink/35 to-ink/0"
+          className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/75 via-ink/25 to-ink/5"
         />
 
-        <div className="mx-auto w-full max-w-[1240px] px-5 pb-14 pt-32 md:px-8 md:pb-20">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-paper/80">
-            Andalusia, Southern Spain
-          </p>
-          <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,7vw,5.25rem)] text-paper">
-            Adopt an olive tree in Andalusia.
-          </h1>
-          <p className="mt-6 max-w-[46ch] text-[17px] leading-relaxed text-paper/85">
-            Choose a Picual on our family estate, follow its season, and
-            receive the oil it produces.
-          </p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <ButtonLink href="/adopt" variant="light">
-              Adopt a tree
-            </ButtonLink>
-            <ButtonLink href="/grove" variant="outline-light">
-              See the grove
-            </ButtonLink>
+        <div className="relative mx-auto w-full max-w-[1280px] px-5 pb-12 pt-40 md:px-10 md:pb-20">
+          <div className="pr-0 md:pr-44">
+            <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-paper/90 sm:text-[11px] sm:tracking-[0.28em] md:text-[12px]">
+              Setenil de las Bodegas
+              <span aria-hidden className="mx-2.5">
+                •
+              </span>
+              Andalusia
+            </p>
+            <h1 className="display mt-6 text-[clamp(2.75rem,6.5vw,5.25rem)] leading-[1.02] text-paper">
+              Adopt an Olive Tree
+              <span className="display-italic block">in Andalusia</span>
+            </h1>
+            <a
+              href="#explore"
+              className="mt-8 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-paper/90 transition-colors hover:text-paper"
+            >
+              Scroll to explore
+              <span aria-hidden className="h-px w-8 bg-current" />
+            </a>
           </div>
+
+          {/* Pinned to the corner rather than sharing a row, so the headline keeps the full width on a phone. */}
+          <EvooSeal className="absolute bottom-10 right-5 h-24 w-24 drop-shadow-[0_12px_24px_rgba(0,0,0,0.35)] md:bottom-16 md:right-10 md:h-36 md:w-36" />
         </div>
       </section>
 
       {/* Credentials. Sits under the hero, never inside it. */}
-      <div className="border-y border-line bg-paper-raised px-5 py-6 md:px-8">
+      <div
+        id="explore"
+        className="scroll-mt-24 border-y border-line bg-paper-raised px-5 py-6 md:px-8"
+      >
         <div className="mx-auto flex w-full max-w-[1240px] flex-wrap items-center gap-x-10 gap-y-4">
           <span className="flex items-center gap-2.5 text-[14px] text-ink">
             <Medal size={19} weight="light" className="text-brick" />

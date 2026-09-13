@@ -134,7 +134,7 @@
 /* Certificate print view. Strips site chrome so "save as PDF" is usable. */
 @media print {
   .grain,
-  header[class*="sticky"],
+  body > header,
   footer {
     display: none !important;
   }

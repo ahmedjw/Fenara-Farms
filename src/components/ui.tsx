@@ -18,8 +18,6 @@ const variants = {
   primary: "bg-olive text-paper hover:bg-olive-mid",
   light: "bg-paper text-olive hover:bg-olive-soft",
   outline: "border border-line-strong text-ink hover:border-ink hover:bg-paper-raised",
-  /** For buttons laid over a photo. */
-  "outline-light": "border border-paper/70 text-paper hover:border-paper hover:bg-paper/10",
   brick: "bg-brick text-white hover:bg-brick-dark",
 } as const;
 
