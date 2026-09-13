@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { currency, getTier, site } from "@/lib/site";
-import { createAdoption, takenTreeIds } from "@/lib/store";
-import { getTree } from "@/lib/trees";
+import { getCell } from "@/lib/land";
+import { createAdoption, takenTreeIds, TreesTakenError } from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -50,6 +50,13 @@ export async function POST(request: Request) {
     );
   }
 
+  if (new Set(trees).size !== trees.length) {
+    return NextResponse.json(
+      { error: "Each spot can only be chosen once." },
+      { status: 400 },
+    );
+  }
+
   if (!customerName?.trim() || !email?.trim() || !/^\S+@\S+\.\S+$/.test(email)) {
     return NextResponse.json(
       { error: "A name and a valid email address are required." },
@@ -57,20 +64,28 @@ export async function POST(request: Request) {
     );
   }
 
-  // Every tree must exist, be available, and not already be spoken for.
+  // Every spot must be on the land map, in a zone that is open, and not
+  // already spoken for. createAdoption checks the last part again at the
+  // moment it writes, in case another checkout gets there first.
   const alreadyTaken = new Set(await takenTreeIds());
   for (const id of trees) {
-    const tree = getTree(id);
-    if (!tree) {
+    const cell = typeof id === "string" ? getCell(id) : undefined;
+    if (!cell) {
       return NextResponse.json(
-        { error: `Tree ${id} is not part of the grove.` },
+        { error: `Spot ${id} is not part of the grove.` },
         { status: 400 },
       );
     }
-    if (tree.status !== "available" || alreadyTaken.has(tree.id)) {
+    if (cell.zone.status !== "active") {
+      return NextResponse.json(
+        { error: `Spot ${id} is not open for adoption yet.` },
+        { status: 400 },
+      );
+    }
+    if (alreadyTaken.has(cell.id)) {
       return NextResponse.json(
         {
-          error: `Tree ${id} was adopted while you were choosing. Please pick another.`,
+          error: `Spot ${id} was adopted while you were choosing. Please pick another.`,
         },
         { status: 409 },
       );
@@ -120,19 +135,34 @@ export async function POST(request: Request) {
       cancel_url: `${baseUrl}/adopt/${tier.id}`,
     });
 
-    await createAdoption({
-      tierId: tier.id,
-      trees,
-      names: cleanNames,
-      customerName: customerName.trim(),
-      email: email.trim(),
-      stripeSessionId: session.id,
-      giftFrom: giftFrom?.trim() || undefined,
-      giftMessage: giftMessage?.trim().slice(0, 200) || undefined,
-    });
+    try {
+      await createAdoption({
+        tierId: tier.id,
+        trees,
+        names: cleanNames,
+        customerName: customerName.trim(),
+        email: email.trim(),
+        stripeSessionId: session.id,
+        giftFrom: giftFrom?.trim() || undefined,
+        giftMessage: giftMessage?.trim().slice(0, 200) || undefined,
+      });
+    } catch (e) {
+      // The session exists but nothing on our side backs it, so close it
+      // before anyone can pay for a spot they will not get.
+      await stripe.checkout.sessions.expire(session.id).catch(() => undefined);
+      throw e;
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (e) {
+    if (e instanceof TreesTakenError) {
+      return NextResponse.json(
+        {
+          error: `Spot ${e.ids.join(", ")} was adopted while you were choosing. Please pick another.`,
+        },
+        { status: 409 },
+      );
+    }
     const message =
       e instanceof Error ? e.message : "Could not start checkout.";
     return NextResponse.json({ error: message }, { status: 500 });

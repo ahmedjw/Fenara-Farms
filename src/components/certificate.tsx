@@ -2,8 +2,8 @@
 
 import { Printer } from "@phosphor-icons/react";
 import type { Adoption } from "@/lib/store";
+import { describePlot } from "@/lib/plots";
 import { site } from "@/lib/site";
-import { blocks, getTree } from "@/lib/trees";
 
 /**
  * Adoption certificate.
@@ -58,26 +58,19 @@ export function Certificate({
         </p>
 
         <ul className="mt-10 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2">
-          {adoption.trees.map((id) => {
-            const tree = getTree(id);
-            const block = tree
-              ? blocks.find((b) => b.id === tree.block)
-              : undefined;
-            return (
-              <li key={id} className="bg-paper-raised p-5 print:bg-white">
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
-                  {id}
-                </p>
-                <p className="display mt-1.5 text-[24px] leading-tight text-olive">
-                  {adoption.names[id]}
-                </p>
-                <p className="mt-2 text-[13px] text-stone">
-                  {block?.name}
-                  {tree ? `, ${tree.age} years old` : ""}
-                </p>
-              </li>
-            );
-          })}
+          {adoption.trees.map((id) => (
+            <li key={id} className="bg-paper-raised p-5 print:bg-white">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
+                {id}
+              </p>
+              <p className="display mt-1.5 text-[24px] leading-tight text-olive">
+                {adoption.names[id]}
+              </p>
+              <p className="mt-2 text-[13px] text-stone">
+                {describePlot(id).place}
+              </p>
+            </li>
+          ))}
         </ul>
 
         {adoption.giftMessage && (

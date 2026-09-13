@@ -6,8 +6,8 @@ import { ArrowLeft, Warning } from "@phosphor-icons/react";
 import { Certificate } from "./certificate";
 import { Button } from "./ui";
 import { getTier } from "@/lib/site";
+import { describePlot } from "@/lib/plots";
 import type { Adoption } from "@/lib/store";
-import { blocks, getTree } from "@/lib/trees";
 
 /**
  * Your grove.
@@ -170,36 +170,24 @@ function GroveDashboard({
           Your {adoption.trees.length === 1 ? "tree" : "trees"}
         </h3>
         <ul className="mt-6 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2 lg:grid-cols-3">
-          {adoption.trees.map((id) => {
-            const tree = getTree(id);
-            const block = tree
-              ? blocks.find((b) => b.id === tree.block)
-              : undefined;
-            return (
-              <li key={id} className="bg-paper-raised p-6">
-                <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
-                  {id}
-                </p>
-                <p className="display mt-1.5 text-[26px] leading-tight text-olive">
-                  {adoption.names[id]}
-                </p>
-                <dl className="mt-4 space-y-1.5 text-[13px]">
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-stone">Block</dt>
-                    <dd className="text-ink">{block?.name}</dd>
+          {adoption.trees.map((id) => (
+            <li key={id} className="bg-paper-raised p-6">
+              <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
+                {id}
+              </p>
+              <p className="display mt-1.5 text-[26px] leading-tight text-olive">
+                {adoption.names[id]}
+              </p>
+              <dl className="mt-4 space-y-1.5 text-[13px]">
+                {describePlot(id).facts.map((fact) => (
+                  <div key={fact.label} className="flex justify-between gap-3">
+                    <dt className="text-stone">{fact.label}</dt>
+                    <dd className="text-ink">{fact.value}</dd>
                   </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-stone">Age</dt>
-                    <dd className="text-ink">{tree?.age} years</dd>
-                  </div>
-                  <div className="flex justify-between gap-3">
-                    <dt className="text-stone">Last season</dt>
-                    <dd className="text-ink">{tree?.lastYield} L</dd>
-                  </div>
-                </dl>
-              </li>
-            );
-          })}
+                ))}
+              </dl>
+            </li>
+          ))}
         </ul>
       </section>
 

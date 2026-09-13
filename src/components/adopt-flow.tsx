@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowRight, Check, Warning } from "@phosphor-icons/react";
-import { GroveMap } from "./grove-map";
+import { LandMap } from "./land-map";
 import { Button } from "./ui";
 import { formatPrice, type Tier } from "@/lib/site";
 
@@ -154,16 +154,16 @@ export function AdoptFlow({
             {step === 0 && (
               <div>
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
-                  Pick {tier.trees} {tier.trees === 1 ? "tree" : "trees"} from
-                  the plan below. Hover any dot to see its age, block and how
-                  much oil it gave last season. Faded dots are already adopted.
+                  Pick {tier.trees} {tier.trees === 1 ? "spot" : "spots"} on the
+                  plan below for your {tier.trees === 1 ? "tree" : "trees"}.
+                  This season the parcel east of the road is open; the rest of
+                  the estate follows later. Grey squares are already adopted.
                 </p>
-                <GroveMap
-                  mode="select"
+                <LandMap
                   limit={tier.trees}
-                  taken={taken}
-                  selected={selected}
-                  onSelect={setSelected}
+                  takenCellIds={taken}
+                  selectedCellIds={selected}
+                  onSelect={(_, ids) => setSelected(ids)}
                 />
                 <p className="mt-5 text-[14px] text-stone">
                   {selected.length} of {tier.trees} chosen

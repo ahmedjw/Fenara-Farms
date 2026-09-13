@@ -21,7 +21,10 @@ export type Adoption = {
   /** Human readable adoption number, e.g. FEN-2026-0043. */
   number: string;
   tierId: string;
-  /** Tree ids from the grove, e.g. ["SOL-014"]. */
+  /**
+   * Spot ids from the land map, e.g. ["A-R41-C55"]. Adoptions made before the
+   * land map hold tree ids from the grove plan instead, e.g. ["SOL-014"].
+   */
   trees: string[];
   /** Tree id mapped to the name the customer gave it. */
   names: Record<string, string>;
@@ -51,6 +54,31 @@ async function write(db: Db): Promise<void> {
   await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2), "utf8");
 }
 
+/**
+ * Runs read-modify-write steps one at a time, so two requests cannot both read
+ * the file, both see a tree as free, and both write. This only holds within
+ * one server process, which is another reason to move to a database.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+function exclusive<T>(task: () => Promise<T>): Promise<T> {
+  const run = queue.then(task, task);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
+/** Thrown when an adoption asks for a tree that another adoption already holds. */
+export class TreesTakenError extends Error {
+  constructor(readonly ids: string[]) {
+    super(`Already adopted: ${ids.join(", ")}`);
+  }
+}
+
+function heldIds(db: Db): Set<string> {
+  return new Set(
+    db.adoptions.filter((a) => a.status !== "cancelled").flatMap((a) => a.trees),
+  );
+}
+
 export const SEASON = 2026;
 
 export async function nextAdoptionNumber(): Promise<string> {
@@ -59,22 +87,32 @@ export async function nextAdoptionNumber(): Promise<string> {
   return `FEN-${SEASON}-${String(seq).padStart(4, "0")}`;
 }
 
+/**
+ * Records an adoption, re-checking inside the lock that none of its trees has
+ * been taken since the caller validated them. Throws TreesTakenError if so.
+ */
 export async function createAdoption(
   input: Omit<Adoption, "number" | "createdAt" | "season" | "status"> & {
     status?: AdoptionStatus;
   },
 ): Promise<Adoption> {
-  const db = await read();
-  const adoption: Adoption = {
-    ...input,
-    number: `FEN-${SEASON}-${String(db.adoptions.length + 1).padStart(4, "0")}`,
-    status: input.status ?? "pending",
-    season: SEASON,
-    createdAt: new Date().toISOString(),
-  };
-  db.adoptions.push(adoption);
-  await write(db);
-  return adoption;
+  return exclusive(async () => {
+    const db = await read();
+    const held = heldIds(db);
+    const clash = input.trees.filter((id) => held.has(id));
+    if (clash.length) throw new TreesTakenError(clash);
+
+    const adoption: Adoption = {
+      ...input,
+      number: `FEN-${SEASON}-${String(db.adoptions.length + 1).padStart(4, "0")}`,
+      status: input.status ?? "pending",
+      season: SEASON,
+      createdAt: new Date().toISOString(),
+    };
+    db.adoptions.push(adoption);
+    await write(db);
+    return adoption;
+  });
 }
 
 export async function getAdoption(number: string): Promise<Adoption | null> {
@@ -96,20 +134,19 @@ export async function getAdoptionBySession(
 export async function activateAdoption(
   sessionId: string,
 ): Promise<Adoption | null> {
-  const db = await read();
-  const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
-  if (!adoption) return null;
-  adoption.status = "active";
-  await write(db);
-  return adoption;
+  return exclusive(async () => {
+    const db = await read();
+    const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
+    if (!adoption) return null;
+    adoption.status = "active";
+    await write(db);
+    return adoption;
+  });
 }
 
-/** Tree ids already spoken for, so the map can grey them out. */
+/** Tree and spot ids already spoken for, so the maps can grey them out. */
 export async function takenTreeIds(): Promise<string[]> {
-  const db = await read();
-  return db.adoptions
-    .filter((a) => a.status !== "cancelled")
-    .flatMap((a) => a.trees);
+  return [...heldIds(await read())];
 }
 
 /** Lookup for the account page: adoption number plus matching email. */
