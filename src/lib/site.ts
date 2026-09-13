@@ -39,8 +39,11 @@ export const site = {
   tagline: "Rooted in history. Restored by nature. Made for today.",
   shortDescription:
     "Adopt a Picual olive tree on our regenerative estate in Andalusia and receive the oil it produces.",
-  estate: "Andalusia, Southern Spain",
+  estate: "Setenil de las Bodegas, Andalusia in Southern Spain",
+  /** What the maps call the whole property. */
+  estateName: "La Finca",
   email: "hello@fenara.com",
+  infoEmail: "info@fenarafarms.com",
   instagram: "https://instagram.com/",
   url: resolveSiteUrl(),
 } as const;
@@ -61,6 +64,8 @@ export type Tier = {
   id: string;
   name: string;
   englishName: string;
+  /** The one-line voice of the tier, e.g. "This is my tree." */
+  tagline: string;
   /** Annual price in cents. */
   price: number;
   trees: number;
@@ -77,20 +82,21 @@ export type Tier = {
 
 export const tiers: Tier[] = [
   {
-    id: "un-olivo",
-    name: "Un Olivo",
+    id: "mi-olivo",
+    name: "Mi Olivo",
     englishName: "One tree",
-    price: 11500,
+    tagline: "This is my tree.",
+    price: 16500,
     trees: 1,
-    litres: 2,
-    bottles: "4 bottles of 500ml",
-    shipments: "1 shipment after harvest",
+    litres: 1.5,
+    bottles: "3 bottles of 500ml",
+    shipments: "Ships in early November, after harvest",
     blurb:
-      "A single Picual, yours for the season. The simplest way into the grove.",
+      "Your own Picual olive tree at Fenara. The simplest way to become part of the grove.",
     includes: [
       "One named olive tree with its own adoption number",
-      "4 bottles of 500ml estate extra virgin olive oil",
-      "Adoption certificate with your tree's location",
+      "3 bottles of 500ml estate early-harvest extra virgin olive oil",
+      "Your name displayed with your tree",
       "Season updates from flowering through harvest",
     ],
     remaining: 34,
@@ -98,18 +104,19 @@ export const tiers: Tier[] = [
   {
     id: "la-familia",
     name: "La Familia",
-    englishName: "Three trees",
-    price: 26500,
-    trees: 3,
-    litres: 6,
-    bottles: "12 bottles of 500ml",
-    shipments: "2 shipments across the year",
+    englishName: "Two trees",
+    tagline: "These are our trees.",
+    price: 29500,
+    trees: 2,
+    litres: 3,
+    bottles: "6 bottles of 500ml",
+    shipments: "Ships in early November, after harvest",
     blurb:
-      "Three neighbouring trees, enough oil for a household that actually cooks with it.",
+      "Two neighbouring Picual trees, growing side by side in the grove. A little more oil, a little more connection — and enough to share around the family table.",
     includes: [
-      "Three named trees, adjacent in the same block",
-      "12 bottles of 500ml estate extra virgin olive oil",
-      "Adoption certificates for all three trees",
+      "Two named trees, adjacent in the same block",
+      "6 bottles of 500ml estate early-harvest extra virgin olive oil",
+      "Your name displayed with your trees",
       "Season updates from flowering through harvest",
       "First refusal on your trees next season",
     ],
@@ -119,21 +126,21 @@ export const tiers: Tier[] = [
   {
     id: "el-olivar",
     name: "El Olivar",
-    englishName: "Eight trees",
+    englishName: "Four trees",
+    tagline: "Our little corner of Fenara.",
     price: 59500,
-    trees: 8,
-    litres: 16,
-    bottles: "32 bottles of 500ml",
-    shipments: "2 shipments across the year",
+    trees: 4,
+    litres: 6,
+    bottles: "12 bottles of 500ml",
+    shipments: "Ships in early November, after harvest",
     blurb:
-      "A corner of the grove under your name. For gifting, for a table that hosts, or for a business that cares where things come from.",
+      "Your own little corner of Fenara. Four neighbouring Picual trees that become part of your story — a place to share with family, give as a gift, or simply call your own.",
     includes: [
-      "Eight named trees forming your own block",
-      "32 bottles of 500ml estate extra virgin olive oil",
-      "Adoption certificates for all eight trees",
+      "Four named trees forming your own small block",
+      "12 bottles of 500ml estate early-harvest extra virgin olive oil",
+      "Your name displayed with your trees",
       "Season updates from flowering through harvest",
-      "Split shipping to up to 4 addresses",
-      "First refusal on your block next season",
+      "First refusal on your trees next season",
     ],
     remaining: 5,
   },

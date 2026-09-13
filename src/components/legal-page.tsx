@@ -15,7 +15,7 @@ export function LegalPage({
 }: {
   title: string;
   updated: string;
-  intro: string;
+  intro: string | string[];
   sections: LegalSection[];
 }) {
   return (
@@ -27,7 +27,13 @@ export function LegalPage({
         <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
           Last updated {updated}
         </p>
-        <p className="mt-8 text-[17px] leading-relaxed text-stone">{intro}</p>
+        <div className="mt-8 space-y-4">
+          {(Array.isArray(intro) ? intro : [intro]).map((p, i) => (
+            <p key={i} className="text-[17px] leading-relaxed text-stone">
+              {p}
+            </p>
+          ))}
+        </div>
 
         <div className="mt-14 space-y-12">
           {sections.map((section) => (

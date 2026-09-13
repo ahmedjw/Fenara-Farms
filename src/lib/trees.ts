@@ -24,50 +24,47 @@ export type Tree = {
   lastYield: number;
 };
 
-export type BlockId = "solana" | "cerro" | "umbria" | "fuente";
+export type BlockId = "nave" | "lago" | "cortijo" | "alberca";
 
 export const blocks: {
   id: BlockId;
   name: string;
   prefix: string;
-  note: string;
+  /** A line about the block's character. Only shown when set. */
+  note?: string;
   rows: number;
   cols: number;
   /** Bounding box on the map, in percent. */
   box: { x: number; y: number; w: number; h: number };
 }[] = [
   {
-    id: "solana",
-    name: "La Solana",
-    prefix: "SOL",
-    note: "South facing, the warmest block. First to ripen every year.",
+    id: "nave",
+    name: "La Nave",
+    prefix: "NAV",
     rows: 5,
     cols: 9,
     box: { x: 7, y: 9, w: 36, h: 20 },
   },
   {
-    id: "cerro",
-    name: "El Cerro",
-    prefix: "CER",
-    note: "The high ground. Oldest trees on the estate, some over 200 years.",
+    id: "lago",
+    name: "El Lago",
+    prefix: "LAG",
     rows: 4,
     cols: 8,
     box: { x: 56, y: 9, w: 36, h: 20 },
   },
   {
-    id: "umbria",
-    name: "La Umbría",
-    prefix: "UMB",
-    note: "Shaded slope. Slower ripening gives a greener, more peppery oil.",
+    id: "cortijo",
+    name: "El Cortijo",
+    prefix: "COR",
     rows: 4,
     cols: 9,
     box: { x: 7, y: 44, w: 36, h: 20 },
   },
   {
-    id: "fuente",
-    name: "La Fuente",
-    prefix: "FUE",
-    note: "Beside the old spring. The cover crop took hold here first.",
+    id: "alberca",
+    name: "Alberca",
+    prefix: "ALB",
     rows: 4,
     cols: 8,
     box: { x: 56, y: 44, w: 36, h: 20 },
@@ -111,7 +108,7 @@ function buildGrove(): Tree[] {
           x: +(block.box.x + col * stepX + jx).toFixed(2),
           y: +(block.box.y + row * stepY + jy).toFixed(2),
           age:
-            block.id === "cerro"
+            block.id === "lago"
               ? Math.round(120 + rand() * 95)
               : Math.round(28 + rand() * 62),
           status,

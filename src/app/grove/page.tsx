@@ -75,9 +75,11 @@ export default async function GrovePage() {
                   {block.prefix}
                 </span>
               </div>
-              <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-stone">
-                {block.note}
-              </p>
+              {block.note && (
+                <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-stone">
+                  {block.note}
+                </p>
+              )}
               <p className="mt-5 border-t border-line pt-4 font-mono text-[12px] text-stone">
                 {block.rows * block.cols} trees
               </p>

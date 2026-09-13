@@ -23,6 +23,7 @@ import {
   type LandZone,
   type Point,
 } from "@/lib/land";
+import { site } from "@/lib/site";
 
 /**
  * The land map.
@@ -227,7 +228,7 @@ export function LandMap({
           {(
             [
               ["parcel", "Open parcel"],
-              ["estate", "Whole property"],
+              ["estate", site.estateName],
             ] as const
           ).map(([id, label]) => (
             <button

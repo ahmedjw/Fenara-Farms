@@ -23,7 +23,7 @@ export type Adoption = {
   tierId: string;
   /**
    * Spot ids from the land map, e.g. ["A-R41-C55"]. Adoptions made before the
-   * land map hold tree ids from the grove plan instead, e.g. ["SOL-014"].
+   * land map hold tree ids from the grove plan instead, e.g. ["NAV-014"].
    */
   trees: string[];
   /** Tree id mapped to the name the customer gave it. */

@@ -3,8 +3,8 @@
     {
       "number": "FEN-2026-0001",
       "tierId": "la-familia",
-      "trees": ["SOL-004", "SOL-005", "SOL-013"],
-      "names": { "SOL-004": "Abuela", "SOL-005": "El Grande", "SOL-013": "Marisol" },
+      "trees": ["NAV-004", "NAV-005"],
+      "names": { "NAV-004": "Abuela", "NAV-005": "El Grande" },
       "customerName": "Marisol Aguirre",
       "email": "marisol@example.com",
       "status": "active",

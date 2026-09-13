@@ -8,16 +8,25 @@ import { formatPrice, tiers } from "@/lib/site";
  * Deliberately not three identical columns. The middle tier carries more
  * weight because it is the one most people want, and the grid reflects that
  * rather than pretending all three are equal.
+ *
+ * On wider screens each card is a subgrid of the same rows, so taglines,
+ * prices and buttons line up across the cards however long each blurb runs.
  */
 export function TierCards({ compact = false }: { compact?: boolean }) {
   return (
-    <div className="grid gap-px overflow-hidden rounded-[2px] border border-line bg-line md:grid-cols-3">
+    <div
+      className={`grid gap-px overflow-hidden rounded-[2px] border border-line bg-line md:grid-cols-3 ${
+        compact
+          ? "md:grid-rows-[repeat(4,auto)_1fr]"
+          : "md:grid-rows-[repeat(4,auto)_1fr_auto]"
+      }`}
+    >
       {tiers.map((tier) => (
         <div
           key={tier.id}
-          className={`flex flex-col p-7 md:p-8 ${
-            tier.featured ? "bg-olive text-paper" : "bg-paper-raised"
-          }`}
+          className={`flex flex-col p-7 md:grid md:grid-rows-subgrid md:p-8 ${
+            compact ? "md:row-span-5" : "md:row-span-6"
+          } ${tier.featured ? "bg-olive text-paper" : "bg-paper-raised"}`}
         >
           <div className="flex items-baseline justify-between gap-3">
             <h3
@@ -36,10 +45,16 @@ export function TierCards({ compact = false }: { compact?: boolean }) {
             </span>
           </div>
 
-          {/* Fixed height so the price rows line up across all three cards
-              regardless of how many lines the blurb wraps to. */}
           <p
-            className={`mt-4 text-[14px] leading-relaxed md:min-h-[4.5rem] ${
+            className={`display mt-5 text-[23px] leading-snug ${
+              tier.featured ? "text-paper" : "text-ink"
+            }`}
+          >
+            {tier.tagline}
+          </p>
+
+          <p
+            className={`mt-3 text-[14px] leading-relaxed ${
               tier.featured ? "text-olive-soft" : "text-stone"
             }`}
           >

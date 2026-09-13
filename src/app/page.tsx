@@ -25,34 +25,41 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* Hero. Asymmetric split, land on the right, message on the left. */}
-      <section className="px-5 pb-16 pt-12 md:px-8 md:pb-20 md:pt-16">
-        <div className="mx-auto grid w-full max-w-[1240px] items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-16">
-          <div>
-            <Eyebrow>Andalusia, Southern Spain</Eyebrow>
-            <h1 className="display mt-5 text-[clamp(2.75rem,7vw,4.75rem)] text-olive">
-              Adopt an olive tree in Andalusia.
-            </h1>
-            <p className="mt-6 max-w-[46ch] text-[17px] leading-relaxed text-stone">
-              Choose a Picual on our family estate, follow its season, and
-              receive the oil it produces.
-            </p>
-            <div className="mt-9 flex flex-wrap gap-3">
-              <ButtonLink href="/adopt">Adopt a tree</ButtonLink>
-              <ButtonLink href="/grove" variant="outline">
-                See the grove
-              </ButtonLink>
-            </div>
-          </div>
+      {/* Hero. The land fills the first screen; the message sits on it. */}
+      <section className="relative isolate flex min-h-[calc(100svh-68px)] items-end overflow-hidden">
+        <Photo
+          src="hero-grove.jpg"
+          alt="The sun setting over rows of Picual olive trees at Fenara Farms in Andalusia"
+          brief="Wide shot of the grove, low sun, rows receding. The single most important photo on the site."
+          size="2400 x 1600px, landscape"
+          priority
+          className="absolute inset-0 -z-10 h-full w-full object-[50%_60%]"
+        />
+        {/* Darkens the lower part of the photo so the type stays readable over bright grass. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/80 via-ink/35 to-ink/0"
+        />
 
-          <Photo
-            src="hero-grove.jpg"
-            alt="The sun setting over rows of Picual olive trees at Fenara Farms in Andalusia"
-            brief="Wide shot of the grove, low sun, rows receding. The single most important photo on the site."
-            size="1600 x 1800px, portrait"
-            priority
-            className="h-[min(62vh,560px)] w-full"
-          />
+        <div className="mx-auto w-full max-w-[1240px] px-5 pb-14 pt-32 md:px-8 md:pb-20">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-paper/80">
+            Andalusia, Southern Spain
+          </p>
+          <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,7vw,5.25rem)] text-paper">
+            Adopt an olive tree in Andalusia.
+          </h1>
+          <p className="mt-6 max-w-[46ch] text-[17px] leading-relaxed text-paper/85">
+            Choose a Picual on our family estate, follow its season, and
+            receive the oil it produces.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <ButtonLink href="/adopt" variant="light">
+              Adopt a tree
+            </ButtonLink>
+            <ButtonLink href="/grove" variant="outline-light">
+              See the grove
+            </ButtonLink>
+          </div>
         </div>
       </section>
 

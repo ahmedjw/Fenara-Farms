@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const character = [
   {
     title: "On the nose",
-    body: "Cut grass and green tomato leaf, with the tomato note strongest in oil from La Umbría.",
+    body: "Cut grass and green tomato leaf.",
   },
   {
     title: "On the palate",

@@ -122,9 +122,9 @@ const season = [
   { phase: "Fruit set", months: "June", done: true },
   { phase: "Growing on", months: "July to September", done: true },
   { phase: "Ripening", months: "October", done: false, current: true },
-  { phase: "Harvest", months: "November", done: false },
-  { phase: "Extraction and bottling", months: "November", done: false },
-  { phase: "Your oil ships", months: "December", done: false },
+  { phase: "Harvest", months: "Late October", done: false },
+  { phase: "Extraction, settling and bottling", months: "Late October", done: false },
+  { phase: "Your oil ships", months: "Early November", done: false },
 ];
 
 function GroveDashboard({

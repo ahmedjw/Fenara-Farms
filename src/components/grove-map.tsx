@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { site } from "@/lib/site";
 import { blocks, grove, type BlockId, type Tree } from "@/lib/trees";
 
 /**
@@ -90,7 +91,7 @@ export function GroveMap({
               : "border-line-strong text-stone hover:border-ink hover:text-ink"
           }`}
         >
-          Whole estate
+          {site.estateName}
         </button>
         {blocks.map((b) => (
           <button
@@ -261,9 +262,11 @@ export function GroveMap({
                   value={isAvailable(active) ? "Available" : "Already adopted"}
                 />
               </dl>
-              <p className="mt-5 border-t border-line pt-4 text-[13px] leading-relaxed text-stone">
-                {activeBlock.note}
-              </p>
+              {activeBlock.note && (
+                <p className="mt-5 border-t border-line pt-4 text-[13px] leading-relaxed text-stone">
+                  {activeBlock.note}
+                </p>
+              )}
               {mode === "select" && isAvailable(active) && (
                 <button
                   type="button"

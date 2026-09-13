@@ -2,7 +2,7 @@
  * What to show for an adopted id.
  *
  * Adoptions made through the land map hold spot ids ("A-R41-C55"). Older ones
- * hold tree ids from the grove plan ("SOL-014"). Certificates and the account
+ * hold tree ids from the grove plan ("NAV-014"). Certificates and the account
  * page read both through here, so neither needs to know which kind it has.
  */
 

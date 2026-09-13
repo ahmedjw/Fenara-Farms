@@ -7,7 +7,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "How much oil do I receive, and when?",
-    a: "It depends on the tier you choose, starting at four 500ml bottles from a single tree. The grove is harvested once a year in late autumn. Oil is cold extracted within hours of picking, bottled from that harvest, and shipped to you after it settles. Expect your first delivery in the weeks following harvest.",
+    a: "It depends on the tier you choose, starting at three 500ml bottles from a single tree. The grove is harvested once a year, in late October. Oil is cold extracted within hours of picking, left to settle naturally and filtered three times before bottling. Our first shipments leave Fenara in early November.",
   },
   {
     q: "Why is the adoption annual?",
@@ -35,6 +35,6 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Where do you ship, and what does it cost?",
-    a: "We ship across the EU, the UK and the United States. Shipping is calculated at checkout based on your address and the weight of your allocation. Bottles travel in moulded protective packaging, and we replace anything that arrives damaged.",
+    a: "We ship across the EU, the UK and the United States. If you are somewhere else, write to us before purchasing and we will tell you whether we can ship to you. Shipping is calculated at checkout based on your address and the weight of your allocation. We package every bottle carefully, and we replace anything that arrives damaged.",
   },
 ];

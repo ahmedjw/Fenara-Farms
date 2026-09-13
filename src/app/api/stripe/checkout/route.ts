@@ -120,10 +120,12 @@ export async function POST(request: Request) {
           },
         },
       ],
+      // The EU, the UK and the United States, as the shipping policy states.
       shipping_address_collection: {
         allowed_countries: [
-          "ES", "PT", "FR", "IT", "DE", "NL", "BE", "IE", "AT", "DK",
-          "SE", "FI", "PL", "GB", "US", "CA",
+          "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE",
+          "GR", "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT",
+          "RO", "SK", "SI", "ES", "SE", "GB", "US",
         ],
       },
       metadata: {
