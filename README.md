@@ -94,10 +94,13 @@ presentable while you shoot.
 
 Everything commercial is in [`src/lib/site.ts`](src/lib/site.ts).
 
-- Prices are in cents. `11500` is $115.00.
+- Prices are in cents. `16500` is $165.00.
 - To switch to euros, change `currency` to `"eur"` and `currencySymbol` to `"€"`.
-- Tier names, what is included, and how many are left this season are all in the
-  `tiers` array.
+- Tier names, taglines, badges and what is included are all in the `tiers`
+  array.
+- The grove's headline numbers (trees on the estate, trees available this season,
+  the blocks open this season and the age range of the trees) are in
+  `groveFacts`.
 
 ## Changing the grove
 

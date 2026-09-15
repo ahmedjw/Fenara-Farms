@@ -11,23 +11,49 @@ import { formatPrice, tiers } from "@/lib/site";
  *
  * On wider screens each card is a subgrid of the same rows, so taglines,
  * prices and buttons line up across the cards however long each blurb runs.
+ * When any tier has a badge, every card gets the badge row, so names stay
+ * level with the card that shows one.
  */
+const hasBadge = tiers.some((t) => t.badge);
+
 export function TierCards({ compact = false }: { compact?: boolean }) {
+  const rows = compact
+    ? hasBadge
+      ? "md:grid-rows-[repeat(5,auto)_1fr]"
+      : "md:grid-rows-[repeat(4,auto)_1fr]"
+    : hasBadge
+      ? "md:grid-rows-[repeat(5,auto)_1fr_auto]"
+      : "md:grid-rows-[repeat(4,auto)_1fr_auto]";
+  const span = compact
+    ? hasBadge
+      ? "md:row-span-6"
+      : "md:row-span-5"
+    : hasBadge
+      ? "md:row-span-7"
+      : "md:row-span-6";
+
   return (
     <div
-      className={`grid gap-px overflow-hidden rounded-[2px] border border-line bg-line md:grid-cols-3 ${
-        compact
-          ? "md:grid-rows-[repeat(4,auto)_1fr]"
-          : "md:grid-rows-[repeat(4,auto)_1fr_auto]"
-      }`}
+      className={`grid gap-px overflow-hidden rounded-[2px] border border-line bg-line md:grid-cols-3 ${rows}`}
     >
       {tiers.map((tier) => (
         <div
           key={tier.id}
-          className={`flex flex-col p-7 md:grid md:grid-rows-subgrid md:p-8 ${
-            compact ? "md:row-span-5" : "md:row-span-6"
-          } ${tier.featured ? "bg-olive text-paper" : "bg-paper-raised"}`}
+          className={`flex flex-col p-7 md:grid md:grid-rows-subgrid md:p-8 ${span} ${
+            tier.featured ? "bg-olive text-paper" : "bg-paper-raised"
+          }`}
         >
+          {hasBadge && (
+            <p
+              className={`-mx-7 -mt-7 mb-6 bg-brick px-4 py-2 text-center font-mono text-[11px] uppercase tracking-[0.18em] text-white md:-mx-8 md:-mt-8 ${
+                tier.badge ? "" : "invisible hidden md:block"
+              }`}
+              aria-hidden={!tier.badge}
+            >
+              {tier.badge ?? " "}
+            </p>
+          )}
+
           <div className="flex items-baseline justify-between gap-3">
             <h3
               className={`display text-[30px] leading-none ${
@@ -119,13 +145,6 @@ export function TierCards({ compact = false }: { compact?: boolean }) {
             >
               Choose {tier.name}
             </Link>
-            <p
-              className={`mt-3 text-center font-mono text-[11px] ${
-                tier.featured ? "text-olive-soft" : "text-stone"
-              }`}
-            >
-              {tier.remaining} left this season
-            </p>
           </div>
         </div>
       ))}

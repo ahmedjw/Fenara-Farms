@@ -55,6 +55,19 @@ export const site = {
 } as const;
 
 /**
+ * Headline facts about the grove, shown on the home and grove pages. Set by
+ * hand rather than counted from the grove plan, which shows a sample of the
+ * trees rather than all of them.
+ */
+export const groveFacts = {
+  treesOnEstate: "Over 1,000",
+  availableThisSeason: 100,
+  /** Blocks open for adoption this season. */
+  openBlocks: ["La Nave"],
+  treeAge: "20–35 years",
+};
+
+/**
  * Change these two lines to switch the whole site to euros.
  * currency must be a Stripe-supported ISO code, lowercase.
  */
@@ -91,9 +104,9 @@ export type Tier = {
   shipments: string;
   blurb: string;
   includes: string[];
-  /** Roughly how many of this tier are left this season. Real inventory. */
-  remaining: number;
   featured?: boolean;
+  /** A short tab shown above the card, e.g. "Top adopter". */
+  badge?: string;
 };
 
 export const tiers: Tier[] = [
@@ -115,13 +128,12 @@ export const tiers: Tier[] = [
       "Your name displayed with your tree",
       "Season updates from flowering through harvest",
     ],
-    remaining: 34,
   },
   {
     id: "la-familia",
     name: "La Familia",
     englishName: "Two trees",
-    tagline: "These are our trees.",
+    tagline: "These are our family trees.",
     price: 29500,
     trees: 2,
     litres: 3,
@@ -136,8 +148,8 @@ export const tiers: Tier[] = [
       "Season updates from flowering through harvest",
       "First refusal on your trees next season",
     ],
-    remaining: 12,
     featured: true,
+    badge: "Top adopter",
   },
   {
     id: "el-olivar",
@@ -158,7 +170,6 @@ export const tiers: Tier[] = [
       "Season updates from flowering through harvest",
       "First refusal on your trees next season",
     ],
-    remaining: 5,
   },
 ];
 

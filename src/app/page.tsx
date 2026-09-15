@@ -15,7 +15,7 @@ import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { ButtonLink, Eyebrow, Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
-import { groveStats } from "@/lib/trees";
+import { groveFacts } from "@/lib/site";
 import { takenTreeIds } from "@/lib/store";
 
 /* Availability on the embedded map refreshes every 5 minutes. */
@@ -196,12 +196,12 @@ export default async function HomePage() {
       <Section className="border-t border-line bg-paper-raised" id="grove">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <h2 className="display max-w-[18ch] text-[clamp(2rem,4.4vw,3.25rem)] text-olive">
-            Every tree on the estate, drawn to plan.
+            The estate, drawn to plan.
           </h2>
           <p className="max-w-[38ch] text-[15px] leading-relaxed text-stone">
-            {groveStats.total} Picual trees across four blocks. The oldest has
-            stood for {groveStats.oldest} years. {groveStats.available} are
-            available to adopt this season.
+            {groveFacts.treesOnEstate} Picual trees across four blocks.{" "}
+            {groveFacts.availableThisSeason} are available to adopt this season,
+            in {groveFacts.openBlocks.join(" and ")}.
           </p>
         </div>
 
