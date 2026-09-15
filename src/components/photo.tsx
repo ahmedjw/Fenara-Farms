@@ -34,12 +34,26 @@ export function Photo({
   const [failed, setFailed] = useState(false);
   const ref = useRef<HTMLImageElement>(null);
 
-  // The image usually 404s before React hydrates, which loses the onError
-  // event entirely. Re-check on mount so the placeholder still appears.
+  // A missing image usually 404s before React hydrates, which loses the
+  // onError event entirely, so check again on mount. "Complete with no width"
+  // is not proof: Safari reports exactly that for a lazy image further down
+  // the page that simply has not started loading, which used to swap real
+  // photos for placeholders. Ask the server whether the file is there instead.
   useEffect(() => {
     const img = ref.current;
-    if (img && img.complete && img.naturalWidth === 0) setFailed(true);
-  }, []);
+    if (!img || img.naturalWidth > 0) return;
+    let cancelled = false;
+    fetch(img.getAttribute("src") ?? "", { method: "HEAD" })
+      .then((res) => {
+        if (!res.ok && !cancelled) setFailed(true);
+      })
+      .catch(() => {
+        // Offline or blocked: keep the image and let onError decide.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
 
   if (failed) {
     return (
