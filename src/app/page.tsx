@@ -217,18 +217,29 @@ export default async function HomePage() {
           You do not just receive olive oil. You get to see where it came from.
         </h2>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3 md:grid-rows-2">
-          <div className="flex flex-col justify-between bg-olive p-7 text-paper md:row-span-2">
-            <Leaf size={28} weight="light" className="text-olive-soft" />
-            <div className="mt-16">
-              <h3 className="display text-[28px] leading-tight text-paper">
-                Your own tree, by name and number
-              </h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-olive-soft">
-                Registered to you on the estate, marked on the grove plan, and
-                named whatever you decide to call it.
-              </p>
-            </div>
+        {/* A fixed top row: equal rows would copy the tall harvest photo's
+            height onto the cards below and stretch the bottle card with them. */}
+        <div className="mt-12 grid gap-5 md:grid-cols-3 md:grid-rows-[360px_auto]">
+          {/* The bottle fills the card; the text sits on a dark fade at the foot of it. */}
+          <div className="relative isolate flex min-h-[520px] flex-col justify-end overflow-hidden bg-olive p-7 text-paper md:row-span-2 md:min-h-0">
+            <Photo
+              src="bottle.jpg"
+              alt="A bottle of Fenara La Reserva Privada, early-harvest Picual extra virgin olive oil"
+              brief="The bottle on its own, label facing the camera, soft background."
+              size="1200 x 1600px, portrait"
+              className="absolute inset-0 -z-10 h-full w-full object-[50%_35%]"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/85 via-ink/30 to-ink/0"
+            />
+            <h3 className="display text-[28px] leading-tight text-paper">
+              Your own tree, by name and number
+            </h3>
+            <p className="mt-3 text-[15px] leading-relaxed text-paper/85">
+              Registered to you on the estate, marked on the grove plan, and
+              named whatever you decide to call it.
+            </p>
           </div>
 
           <Photo
@@ -236,7 +247,7 @@ export default async function HomePage() {
             alt="Freshly picked olives on harvest nets beneath the trees at Fenara Farms"
             brief="Close crop of hands and olives at harvest. Warm, tactile, human."
             size="1200 x 900px, landscape"
-            className="aspect-[4/3] w-full md:col-span-2"
+            className="aspect-[4/3] w-full md:col-span-2 md:aspect-auto md:h-full"
           />
 
           <div className="border border-line bg-paper-raised p-7">

@@ -13,6 +13,7 @@ needs to be larger than about 400KB.
 | `story-soil.jpg`    | Home, story section     | Ground level, cover crop and wildflowers between rows. Proof of restoration. | 1200 x 1500 tall |
 | `harvest-hands.jpg` | Home, what is included  | Close crop of hands and olives at harvest. Tactile, human.               | 1200 x 900 wide   |
 | `gift-bottles.jpg`  | Home, gifting           | Bottles in shipping packaging. Styled but not glossy.                    | 1200 x 1000 wide  |
+| `bottle.jpg`        | Home, what is included  | The bottle on its own, label facing the camera, soft background.         | 1200 x 1600 tall  |
 | `grove-path.jpg`    | The grove page          | Eye level down a row or track, so a visitor can imagine walking it.      | 1400 x 1050 wide  |
 | `story-hero.jpg`    | Our story, banner       | The whole estate. Wide, calm, land rather than product.                  | 2000 x 1000 wide  |
 | `story-tree.jpg`    | Our story, lower        | One old characterful tree, trunk detail. Emotional anchor.               | 1200 x 1500 tall  |
