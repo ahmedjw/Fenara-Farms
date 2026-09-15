@@ -52,12 +52,32 @@ payments:
 
 Test card `4242 4242 4242 4242`, any future expiry, any CVC.
 
+### Yearly renewals
+
+Adoptions are yearly Stripe subscriptions: checkout charges the plan price and
+Stripe charges it again on each anniversary until the adopter cancels. Three
+settings in the Stripe dashboard make that work the way the site describes it:
+
+1. **Customer portal** (Settings > Billing > Customer portal). Allow customers
+   to cancel subscriptions, at the end of the billing period, and save. Copy the
+   login link into `NEXT_PUBLIC_STRIPE_PORTAL_URL`. The account page links to
+   it as "Manage or cancel renewal"; adopters confirm their email there with a
+   one-time code.
+2. **Renewal reminders** (Settings > Billing > Subscriptions and emails). Turn
+   on emails about upcoming renewals. The FAQ and terms promise adopters
+   notice before each renewal.
+3. **Webhook events.** Send `checkout.session.completed`,
+   `checkout.session.expired`, `invoice.paid`, `customer.subscription.updated`
+   and `customer.subscription.deleted` to the endpoint. They record renewals,
+   cancellations and endings, and release the spots of checkouts that expire
+   unpaid.
+
 ### Going live
 
 Swap the test keys for live keys, add a webhook endpoint in the Stripe
-dashboard pointing at `https://yourdomain.com/api/stripe/webhook` listening for
-`checkout.session.completed`, and set `NEXT_PUBLIC_SITE_URL` to your real
-domain.
+dashboard pointing at `https://yourdomain.com/api/stripe/webhook` with the
+events above, repeat the customer portal and renewal email settings in live
+mode, and set `NEXT_PUBLIC_SITE_URL` to your real domain.
 
 ---
 
@@ -81,9 +101,9 @@ Everything commercial is in [`src/lib/site.ts`](src/lib/site.ts).
 
 ## Changing the grove
 
-[`src/lib/trees.ts`](src/lib/trees.ts) generates the estate: four blocks, their
-names and descriptions, and every tree with an age and a last yield. Tree
-positions come from a seeded generator so the map is identical on every load.
+[`src/lib/trees.ts`](src/lib/trees.ts) generates the grove plan: four blocks,
+their names and descriptions, and a sample of trees. Tree positions come from a
+seeded generator so the map is identical on every load.
 
 When you have a real survey of the estate, replace `buildGrove()` with a loader
 that reads your own coordinates. Nothing else needs to change.
@@ -132,7 +152,7 @@ src/
     account/                     grove lookup and season dashboard
     faq/  contact/  policies/
     api/stripe/checkout/         creates the Stripe session
-    api/stripe/webhook/          marks adoptions paid
+    api/stripe/webhook/          marks adoptions paid, follows renewals
     api/account/  api/contact/
   components/
     grove-map.tsx                the estate plan, browse and select modes

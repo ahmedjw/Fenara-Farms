@@ -101,9 +101,17 @@ export async function POST(request: Request) {
   // fallback, and guarantees a parseable absolute URL.
   const baseUrl = site.url;
 
+  const metadata = {
+    tierId: tier.id,
+    trees: trees.join(","),
+    customerName: customerName.trim(),
+  };
+
   try {
+    // Adoptions renew every year until cancelled, so checkout starts a yearly
+    // subscription. Stripe charges the plan price now and on each anniversary.
     const session = await stripe.checkout.sessions.create({
-      mode: "payment",
+      mode: "subscription",
       customer_email: email.trim(),
       line_items: [
         {
@@ -111,15 +119,17 @@ export async function POST(request: Request) {
           price_data: {
             currency,
             unit_amount: tier.price,
+            recurring: { interval: "year" },
             product_data: {
               name: `Fenara Farms adoption, ${tier.name}`,
               description: `${tier.trees} Picual ${
                 tier.trees === 1 ? "tree" : "trees"
-              } at Fenara Farms for the 2026 season. ${tier.bottles}.`,
+              } at Fenara Farms. ${tier.bottles} from each harvest. Renews yearly until cancelled.`,
             },
           },
         },
       ],
+      subscription_data: { metadata },
       // The EU, the UK and the United States, as the shipping policy states.
       shipping_address_collection: {
         allowed_countries: [
@@ -128,11 +138,7 @@ export async function POST(request: Request) {
           "RO", "SK", "SI", "ES", "SE", "GB", "US",
         ],
       },
-      metadata: {
-        tierId: tier.id,
-        trees: trees.join(","),
-        customerName: customerName.trim(),
-      },
+      metadata,
       success_url: `${baseUrl}/adopt/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/adopt/${tier.id}`,
     });

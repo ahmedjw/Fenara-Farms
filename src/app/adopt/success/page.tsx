@@ -4,8 +4,8 @@ import { CheckCircle, Warning } from "@phosphor-icons/react/dist/ssr";
 import { Certificate } from "@/components/certificate";
 import { Section } from "@/components/ui";
 import { getAdoptionBySession, activateAdoption } from "@/lib/store";
-import { getStripe } from "@/lib/stripe";
-import { getTier } from "@/lib/site";
+import { billingOfSession, getStripe } from "@/lib/stripe";
+import { formatDate, getTier } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Your adoption is confirmed" };
 export const dynamic = "force-dynamic";
@@ -37,7 +37,11 @@ export default async function SuccessPage({
     try {
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       if (session.payment_status === "paid") {
-        adoption = (await activateAdoption(sessionId)) ?? adoption;
+        adoption =
+          (await activateAdoption(
+            sessionId,
+            await billingOfSession(stripe, session),
+          )) ?? adoption;
       }
     } catch {
       // Leave it pending. The webhook will catch up.
@@ -76,9 +80,15 @@ export default async function SuccessPage({
               <span className="font-mono text-[15px] text-ink">
                 {adoption.number}
               </span>{" "}
-              is registered for the 2026 season. We have sent a confirmation to{" "}
-              {adoption.email}. Keep your adoption number: it is how you reach
-              your grove.
+              is registered for the {adoption.season} season. We have sent a
+              confirmation to {adoption.email}. Keep your adoption number: it is
+              how you reach your grove.
+            </p>
+            <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-stone">
+              Your adoption renews every year
+              {adoption.renewsAt ? `, next on ${formatDate(adoption.renewsAt)}` : ""}
+              , and Stripe charges the card you used unless you cancel before
+              then. You can cancel any time from your grove page.
             </p>
 
             {adoption.status === "pending" && (

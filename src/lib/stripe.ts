@@ -7,6 +7,7 @@
  */
 
 import Stripe from "stripe";
+import type { Billing } from "./store";
 
 let cached: Stripe | null = null;
 
@@ -18,6 +19,32 @@ export function getStripe(): Stripe | null {
     cached = new Stripe(key);
   }
   return cached;
+}
+
+/** What an adoption keeps from its yearly subscription. */
+export function billingOf(subscription: Stripe.Subscription): Billing {
+  return {
+    stripeCustomerId:
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : subscription.customer.id,
+    stripeSubscriptionId: subscription.id,
+    renewsAt: new Date(subscription.current_period_end * 1000).toISOString(),
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+  };
+}
+
+/** Billing for a completed checkout, fetching the subscription it created. */
+export async function billingOfSession(
+  stripe: Stripe,
+  session: Stripe.Checkout.Session,
+): Promise<Billing> {
+  if (!session.subscription) return {};
+  const subscription =
+    typeof session.subscription === "string"
+      ? await stripe.subscriptions.retrieve(session.subscription)
+      : session.subscription;
+  return billingOf(subscription);
 }
 
 export function stripeConfigured(): boolean {

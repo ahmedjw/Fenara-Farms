@@ -296,8 +296,9 @@ export default async function HomePage() {
             Choose how much of the grove is yours.
           </h2>
           <p className="max-w-[36ch] text-[15px] leading-relaxed text-stone">
-            Each adoption covers one harvest season. The grove is picked once a
-            year, so adoptions open only in the run up to harvest.
+            Each adoption covers a year and its harvest, and renews yearly
+            until you cancel. The grove is picked once a year, so adoptions open
+            only in the run up to harvest.
           </p>
         </div>
 

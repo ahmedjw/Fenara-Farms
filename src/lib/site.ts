@@ -55,6 +55,16 @@ export const site = {
 export const currency = "usd";
 export const currencySymbol = "$";
 
+/** A date as the estate would write it, e.g. "15 October 2026", in Madrid time. */
+export function formatDate(date: string | number | Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Madrid",
+  }).format(new Date(date));
+}
+
 export function formatPrice(cents: number): string {
   const whole = cents / 100;
   return `${currencySymbol}${whole % 1 === 0 ? whole.toFixed(0) : whole.toFixed(2)}`;
@@ -66,7 +76,7 @@ export type Tier = {
   englishName: string;
   /** The one-line voice of the tier, e.g. "This is my tree." */
   tagline: string;
-  /** Annual price in cents. */
+  /** Yearly price in cents. Stripe charges it at checkout and again on each renewal. */
   price: number;
   trees: number;
   /** Total litres of oil per season. */

@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, Warning } from "@phosphor-icons/react";
 import { Certificate } from "./certificate";
 import { Button } from "./ui";
-import { getTier } from "@/lib/site";
+import { formatDate, formatPrice, getTier, site } from "@/lib/site";
 import { describePlot } from "@/lib/plots";
 import type { Adoption } from "@/lib/store";
 
@@ -116,6 +116,53 @@ export function AccountPanel() {
   );
 }
 
+/**
+ * Stripe's hosted customer portal login link, from Settings > Billing >
+ * Customer portal. Customers confirm their email with a one-time code there
+ * before they can change or cancel anything, so an adoption number and email
+ * alone are never enough to cancel someone else's renewal.
+ */
+const portalUrl = process.env.NEXT_PUBLIC_STRIPE_PORTAL_URL;
+
+function Renewal({ adoption, price }: { adoption: Adoption; price: string | null }) {
+  const ended = adoption.status === "cancelled";
+  const status = ended
+    ? "This adoption has ended and will not renew."
+    : adoption.cancelAtPeriodEnd && adoption.renewsAt
+      ? `Renewal cancelled. Your adoption continues until ${formatDate(adoption.renewsAt)} and then ends.`
+      : adoption.renewsAt
+        ? `Renews on ${formatDate(adoption.renewsAt)}. Stripe charges ${price ?? "your plan price"} to the card you adopted with unless you cancel before then.`
+        : "Renews every year. Stripe charges your plan price to the card you adopted with unless you cancel before your renewal date.";
+
+  return (
+    <section className="mt-12 flex flex-col gap-5 border border-line bg-paper-raised p-6 md:flex-row md:items-center md:justify-between print:hidden">
+      <div>
+        <h3 className="display text-[26px] leading-none text-ink">Renewal</h3>
+        <p className="mt-3 max-w-[60ch] text-[14px] leading-relaxed text-stone">
+          {status}
+        </p>
+      </div>
+      {!ended &&
+        (portalUrl ? (
+          <a
+            href={`${portalUrl}?prefilled_email=${encodeURIComponent(adoption.email)}`}
+            className="inline-flex shrink-0 items-center justify-center rounded-[2px] border border-line-strong px-5 py-3 text-[14px] font-medium text-ink transition-colors hover:border-ink hover:bg-paper"
+          >
+            Manage or cancel renewal
+          </a>
+        ) : (
+          <p className="max-w-[34ch] text-[14px] leading-relaxed text-stone">
+            To cancel your renewal, write to{" "}
+            <a href={`mailto:${site.email}`} className="text-ink underline underline-offset-4">
+              {site.email}
+            </a>
+            .
+          </p>
+        ))}
+    </section>
+  );
+}
+
 /** Where the season currently stands. Drives the timeline below. */
 const season = [
   { phase: "Flowering", months: "April to May", done: true },
@@ -163,6 +210,8 @@ function GroveDashboard({
           )}
         </p>
       </div>
+
+      <Renewal adoption={adoption} price={tier ? formatPrice(tier.price) : null} />
 
       {/* Your trees */}
       <section className="mt-12">

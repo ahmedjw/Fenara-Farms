@@ -78,8 +78,15 @@ export function TierCards({ compact = false }: { compact?: boolean }) {
                 tier.featured ? "text-olive-soft" : "text-stone"
               }`}
             >
-              per season
+              per year
             </span>
+            <p
+              className={`mt-2 text-[12px] ${
+                tier.featured ? "text-olive-soft" : "text-stone"
+              }`}
+            >
+              Renews yearly until you cancel
+            </p>
           </div>
 
           {!compact && (
