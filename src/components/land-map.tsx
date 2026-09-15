@@ -23,7 +23,7 @@ import {
   type LandZone,
   type Point,
 } from "@/lib/land";
-import { site } from "@/lib/site";
+import { groveFacts, site } from "@/lib/site";
 
 /**
  * The land map.
@@ -71,7 +71,7 @@ const zoneById = new Map(land.zones.map((z) => [z.id, z]));
 
 const estateView = { x: 0, y: 0, width: land.width, height: land.height };
 
-// The open parcels plus a margin, widened to at least 4:3 so the view does not
+// The open blocks plus a margin, widened to at least 4:3 so the view does not
 // run far below the fold on a desktop.
 const parcelView = (() => {
   if (!activeZones.length) return null;
@@ -227,7 +227,7 @@ export function LandMap({
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {(
             [
-              ["parcel", "Open parcel"],
+              ["parcel", activeZones.map((z) => z.name).join(" & ")],
               ["estate", site.estateName],
             ] as const
           ).map(([id, label]) => (
@@ -250,7 +250,7 @@ export function LandMap({
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_270px]">
         <div className="min-w-0 overflow-hidden rounded-[2px] border border-line bg-paper-sunk">
-          {/* On a phone the open parcel scrolls sideways rather than shrinking, so a spot stays tappable. */}
+          {/* On a phone the open block scrolls sideways rather than shrinking, so a spot stays tappable. */}
           <div ref={scroller} className="overflow-x-auto">
             <div
               className={`relative ${
@@ -261,7 +261,11 @@ export function LandMap({
                 viewBox={`${box.x} ${box.y} ${box.width} ${box.height}`}
                 className="block h-auto w-full touch-manipulation select-none"
                 role="group"
-                aria-label="Plan of the estate. Choose a spot inside the open parcel."
+                aria-label={
+                  onSelect
+                    ? "Plan of the estate. Choose a spot inside the open block."
+                    : "Plan of the estate, showing which spots are open for adoption."
+                }
                 onClick={(e) => {
                   const found = locate(e);
                   if (found && "cell" in found) choose(found.cell);
@@ -462,7 +466,9 @@ export function LandMap({
                 {activeCell.id}
               </p>
               <dl className="mt-5 space-y-2.5 text-[13px]">
-                <Row label="Parcel" value={activeZone.name} />
+                <Row label="Block" value={activeZone.name} />
+                <Row label="Variety" value="Picual" />
+                <Row label="Age" value={groveFacts.treeAge} />
                 <Row label="Size" value={`${spotMetres} × ${spotMetres} m`} />
                 <Row label="Status" value={statusOf(activeCell)} />
               </dl>
@@ -486,15 +492,15 @@ export function LandMap({
               </p>
               <p className="mt-5 text-[14px] leading-relaxed text-stone">
                 {activeZone.status === "active"
-                  ? "No spot here. Spots are kept clear of the buildings and the parcel edge."
+                  ? "No spot here. Spots are kept clear of the buildings and the edge of the block."
                   : "This part of the estate is not open for adoption yet."}
               </p>
             </>
           ) : (
             <p className="text-[14px] leading-relaxed text-stone">
               {onSelect
-                ? `Pick ${limit} ${limit === 1 ? "spot" : "spots"} inside the outlined parcel. Each square is a ${spotMetres} by ${spotMetres} metre spot for one tree. On a keyboard, tab to the plan and use the arrow keys.`
-                : "Hover or tap a square to see whether that spot is free."}
+                ? `Pick ${limit} ${limit === 1 ? "spot" : "spots"} inside the outlined block. Each square is a ${spotMetres} by ${spotMetres} metre spot for one tree. On a keyboard, tab to the plan and use the arrow keys.`
+                : `This is the estate from above. Each square in ${activeZones.map((z) => z.name).join(" and ")} is a ${spotMetres} by ${spotMetres} metre spot for one tree. Hover or tap one to see whether it is free.`}
             </p>
           )}
         </aside>

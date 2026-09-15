@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { List, X } from "@phosphor-icons/react";
 import { site } from "@/lib/site";
+import { HarvestCountdown } from "./harvest-countdown";
 import { ButtonLink } from "./ui";
 
 const nav = [
@@ -92,6 +93,7 @@ export function SiteHeader() {
           </div>
         )}
       </div>
+      <HarvestCountdown />
     </header>
   );
 }

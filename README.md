@@ -52,12 +52,32 @@ payments:
 
 Test card `4242 4242 4242 4242`, any future expiry, any CVC.
 
+### Yearly renewals
+
+Adoptions are yearly Stripe subscriptions: checkout charges the plan price and
+Stripe charges it again on each anniversary until the adopter cancels. Three
+settings in the Stripe dashboard make that work the way the site describes it:
+
+1. **Customer portal** (Settings > Billing > Customer portal). Allow customers
+   to cancel subscriptions, at the end of the billing period, and save. Copy the
+   login link into `NEXT_PUBLIC_STRIPE_PORTAL_URL`. The account page links to
+   it as "Manage or cancel renewal"; adopters confirm their email there with a
+   one-time code.
+2. **Renewal reminders** (Settings > Billing > Subscriptions and emails). Turn
+   on emails about upcoming renewals. The FAQ and terms promise adopters
+   notice before each renewal.
+3. **Webhook events.** Send `checkout.session.completed`,
+   `checkout.session.expired`, `invoice.paid`, `customer.subscription.updated`
+   and `customer.subscription.deleted` to the endpoint. They record renewals,
+   cancellations and endings, and release the spots of checkouts that expire
+   unpaid.
+
 ### Going live
 
 Swap the test keys for live keys, add a webhook endpoint in the Stripe
-dashboard pointing at `https://yourdomain.com/api/stripe/webhook` listening for
-`checkout.session.completed`, and set `NEXT_PUBLIC_SITE_URL` to your real
-domain.
+dashboard pointing at `https://yourdomain.com/api/stripe/webhook` with the
+events above, repeat the customer portal and renewal email settings in live
+mode, and set `NEXT_PUBLIC_SITE_URL` to your real domain.
 
 ---
 
@@ -74,19 +94,29 @@ presentable while you shoot.
 
 Everything commercial is in [`src/lib/site.ts`](src/lib/site.ts).
 
-- Prices are in cents. `11500` is $115.00.
+- Prices are in cents. `16500` is $165.00.
 - To switch to euros, change `currency` to `"eur"` and `currencySymbol` to `"€"`.
-- Tier names, what is included, and how many are left this season are all in the
-  `tiers` array.
+- Tier names, taglines, badges and what is included are all in the `tiers`
+  array.
+- The grove's headline numbers (trees on the estate, trees available this season
+  and the age range of the trees) are in `groveFacts`. Which blocks are open
+  comes from each zone's `status` in `assets/land-zones.json`.
 
 ## Changing the grove
 
-[`src/lib/trees.ts`](src/lib/trees.ts) generates the estate: four blocks, their
-names and descriptions, and every tree with an age and a last yield. Tree
-positions come from a seeded generator so the map is identical on every load.
+The map on the home, grove and adoption pages is the surveyor's aerial plan in
+`assets/land-clean-cropped.png`, with its blocks, buildings and tree spots in
+[`assets/land-zones.json`](assets/land-zones.json). Both are built by
+[`scripts/process-land-image.py`](scripts/process-land-image.py); its docstring
+explains how to re-run it.
 
-When you have a real survey of the estate, replace `buildGrove()` with a loader
-that reads your own coordinates. Nothing else needs to change.
+- To open another block for adoption, set its zone's `status` to `"active"`.
+- A zone's `name` is what the map and certificates call it, e.g. La Nave.
+- Do not change the image crop, `cellSizeMeters` or a zone's `code` once spots
+  have been adopted: spot ids are derived from them.
+
+[`src/lib/trees.ts`](src/lib/trees.ts) holds the four block names and the tree
+ids used by adoptions made before the land map, so those still display.
 
 ---
 
@@ -132,16 +162,17 @@ src/
     account/                     grove lookup and season dashboard
     faq/  contact/  policies/
     api/stripe/checkout/         creates the Stripe session
-    api/stripe/webhook/          marks adoptions paid
+    api/stripe/webhook/          marks adoptions paid, follows renewals
     api/account/  api/contact/
   components/
-    grove-map.tsx                the estate plan, browse and select modes
+    land-map.tsx                 the aerial estate plan, browsing and picking spots
     adopt-flow.tsx               the 4 step flow
     certificate.tsx              printable adoption certificate
     photo.tsx                    photo slot with labelled placeholder
   lib/
     site.ts                      brand, tiers, prices, currency
-    trees.ts                     the grove
+    trees.ts                     block names, and tree ids from before the land map
+    land.ts                      zones and spots from assets/land-zones.json
     store.ts                     adoption persistence
     faq.ts  stripe.ts
 ```

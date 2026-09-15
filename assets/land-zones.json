@@ -117,7 +117,7 @@
     {
       "id": "small-parcel",
       "code": "A",
-      "name": "East parcel",
+      "name": "La Nave",
       "label": "Available",
       "status": "active",
       "polygon": [
@@ -165,7 +165,7 @@
     {
       "id": "large-parcel",
       "code": "B",
-      "name": "Main parcel",
+      "name": "The rest of La Finca",
       "label": "Coming soon",
       "status": "locked",
       "polygon": [

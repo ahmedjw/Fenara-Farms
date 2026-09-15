@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowLeft, ArrowRight, Check, Warning } from "@phosphor-icons/react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowsClockwise,
+  Check,
+  Warning,
+} from "@phosphor-icons/react";
 import { LandMap } from "./land-map";
 import { Button } from "./ui";
-import { formatPrice, type Tier } from "@/lib/site";
+import { openZoneNames } from "@/lib/land";
+import { formatDate, formatPrice, type Tier } from "@/lib/site";
 
 /**
  * The adoption flow.
@@ -101,7 +108,7 @@ export function AdoptFlow({
           <p className="display text-[34px] leading-none text-ink">
             {formatPrice(tier.price)}
             <span className="ml-2 font-sans text-[14px] text-stone">
-              per season
+              per year
             </span>
           </p>
         </div>
@@ -156,8 +163,8 @@ export function AdoptFlow({
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
                   Pick {tier.trees} {tier.trees === 1 ? "spot" : "spots"} on the
                   plan below for your {tier.trees === 1 ? "tree" : "trees"}.
-                  This season the parcel east of the road is open; the rest of
-                  the estate follows later. Grey squares are already adopted.
+                  This season {openZoneNames.join(" and ")} is open; the rest of
+                  La Finca follows later. Grey squares are already adopted.
                 </p>
                 <LandMap
                   limit={tier.trees}
@@ -357,10 +364,26 @@ export function AdoptFlow({
                       {formatPrice(tier.price)}
                     </span>{" "}
                     <span className="text-stone">
-                      per season, shipping calculated at payment
+                      per year, shipping calculated at payment
                     </span>
                   </Summary>
                 </dl>
+
+                {/* Stated plainly before payment: what recurs, when, and how to stop it. */}
+                <div className="mt-6 flex gap-3 border border-line-strong bg-paper-raised p-4">
+                  <ArrowsClockwise
+                    size={19}
+                    weight="light"
+                    className="mt-0.5 shrink-0 text-olive-mid"
+                  />
+                  <p className="text-[14px] leading-relaxed text-ink">
+                    Your adoption renews automatically every year. Stripe charges{" "}
+                    {formatPrice(tier.price)} to your card today and again on{" "}
+                    {formatDate(oneYearFromNow())} and each year after, until you
+                    cancel. You can cancel any time before a renewal from your
+                    grove page, and we let you know before each renewal.
+                  </p>
+                </div>
 
                 {!paymentsReady && (
                   <div className="mt-6 flex gap-3 border border-brick bg-paper-raised p-4">
@@ -422,6 +445,13 @@ export function AdoptFlow({
       </div>
     </div>
   );
+}
+
+/** The first renewal: Stripe charges again on the anniversary of today's payment. */
+function oneYearFromNow() {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() + 1);
+  return date;
 }
 
 function Summary({

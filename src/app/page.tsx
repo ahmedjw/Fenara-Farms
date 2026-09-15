@@ -10,12 +10,13 @@ import {
 import { EvooSeal } from "@/components/evoo-seal";
 import { Photo } from "@/components/photo";
 import { Reveal } from "@/components/reveal";
-import { GroveMap } from "@/components/grove-map";
+import { LandMap } from "@/components/land-map";
 import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { ButtonLink, Eyebrow, Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
-import { groveStats } from "@/lib/trees";
+import { openZoneNames } from "@/lib/land";
+import { groveFacts } from "@/lib/site";
 import { takenTreeIds } from "@/lib/store";
 
 /* Availability on the embedded map refreshes every 5 minutes. */
@@ -51,6 +52,10 @@ export default async function HomePage() {
                 •
               </span>
               Andalusia
+              <span aria-hidden className="mx-2.5">
+                •
+              </span>
+              Spain
             </p>
             <h1 className="display mt-6 text-[clamp(2.75rem,6.5vw,5.25rem)] leading-[1.02] text-paper">
               Adopt an Olive Tree
@@ -192,17 +197,17 @@ export default async function HomePage() {
       <Section className="border-t border-line bg-paper-raised" id="grove">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <h2 className="display max-w-[18ch] text-[clamp(2rem,4.4vw,3.25rem)] text-olive">
-            Every tree on the estate, drawn to plan.
+            The estate, drawn to plan.
           </h2>
           <p className="max-w-[38ch] text-[15px] leading-relaxed text-stone">
-            {groveStats.total} Picual trees across four blocks. The oldest has
-            stood for {groveStats.oldest} years. {groveStats.available} are
-            available to adopt this season.
+            {groveFacts.treesOnEstate} Picual trees across four blocks.{" "}
+            {groveFacts.availableThisSeason} are available to adopt this season,
+            in {openZoneNames.join(" and ")}.
           </p>
         </div>
 
         <div className="mt-10">
-          <GroveMap taken={taken} />
+          <LandMap takenCellIds={taken} />
         </div>
       </Section>
 
@@ -212,18 +217,29 @@ export default async function HomePage() {
           You do not just receive olive oil. You get to see where it came from.
         </h2>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3 md:grid-rows-2">
-          <div className="flex flex-col justify-between bg-olive p-7 text-paper md:row-span-2">
-            <Leaf size={28} weight="light" className="text-olive-soft" />
-            <div className="mt-16">
-              <h3 className="display text-[28px] leading-tight text-paper">
-                Your own tree, by name and number
-              </h3>
-              <p className="mt-3 text-[15px] leading-relaxed text-olive-soft">
-                Registered to you on the estate, marked on the grove plan, and
-                named whatever you decide to call it.
-              </p>
-            </div>
+        {/* A fixed top row: equal rows would copy the tall harvest photo's
+            height onto the cards below and stretch the bottle card with them. */}
+        <div className="mt-12 grid gap-5 md:grid-cols-3 md:grid-rows-[360px_auto]">
+          {/* The bottle fills the card; the text sits on a dark fade at the foot of it. */}
+          <div className="relative isolate flex min-h-[520px] flex-col justify-end overflow-hidden bg-olive p-7 text-paper md:row-span-2 md:min-h-0">
+            <Photo
+              src="bottle.jpg"
+              alt="A bottle of Fenara La Reserva Privada, early-harvest Picual extra virgin olive oil"
+              brief="The bottle on its own, label facing the camera, soft background."
+              size="1200 x 1600px, portrait"
+              className="absolute inset-0 -z-10 h-full w-full object-[50%_35%]"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 -z-10 bg-gradient-to-t from-ink/85 via-ink/30 to-ink/0"
+            />
+            <h3 className="display text-[28px] leading-tight text-paper">
+              Your own tree, by name and number
+            </h3>
+            <p className="mt-3 text-[15px] leading-relaxed text-paper/85">
+              Registered to you on the estate, marked on the grove plan, and
+              named whatever you decide to call it.
+            </p>
           </div>
 
           <Photo
@@ -231,7 +247,7 @@ export default async function HomePage() {
             alt="Freshly picked olives on harvest nets beneath the trees at Fenara Farms"
             brief="Close crop of hands and olives at harvest. Warm, tactile, human."
             size="1200 x 900px, landscape"
-            className="aspect-[4/3] w-full md:col-span-2"
+            className="aspect-[4/3] w-full md:col-span-2 md:aspect-auto md:h-full"
           />
 
           <div className="border border-line bg-paper-raised p-7">
@@ -296,8 +312,9 @@ export default async function HomePage() {
             Choose how much of the grove is yours.
           </h2>
           <p className="max-w-[36ch] text-[15px] leading-relaxed text-stone">
-            Each adoption covers one harvest season. The grove is picked once a
-            year, so adoptions open only in the run up to harvest.
+            Each adoption covers a year and its harvest, and renews yearly
+            until you cancel. The grove is picked once a year, so adoptions open
+            only in the run up to harvest.
           </p>
         </div>
 

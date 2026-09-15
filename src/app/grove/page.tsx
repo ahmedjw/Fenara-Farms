@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import { Photo } from "@/components/photo";
-import { GroveMap } from "@/components/grove-map";
+import { LandMap } from "@/components/land-map";
 import { ButtonLink, Section } from "@/components/ui";
-import { blocks, groveStats } from "@/lib/trees";
+import { openZoneNames } from "@/lib/land";
+import { groveFacts } from "@/lib/site";
+import { blocks } from "@/lib/trees";
 import { takenTreeIds } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "The grove",
   description:
-    "Every Picual olive tree at Fenara Farms in Andalusia, drawn to plan. Browse the four blocks and see which trees are available to adopt.",
+    "The Picual olive grove at Fenara Farms in Andalusia, seen from above, with the spots open for adoption this season.",
 };
 
 /* The plan is the point of this page, so keep availability close to live. */
@@ -26,24 +28,33 @@ export default async function GrovePage() {
               The grove, tree by tree.
             </h1>
             <p className="mt-6 max-w-[52ch] text-[17px] leading-relaxed text-stone">
-              {groveStats.total} Picual olive trees across four blocks on a
-              single estate in Andalusia. The oldest has stood for{" "}
-              {groveStats.oldest} years. Every one of them is on this plan.
+              {groveFacts.treesOnEstate} Picual olive trees across four blocks
+              on a single estate in Andalusia. This season,{" "}
+              {groveFacts.availableThisSeason} of them are available to adopt in{" "}
+              {openZoneNames.join(" and ")}.
             </p>
           </div>
           <dl className="grid grid-cols-3 gap-6 self-end border-t border-line-strong pt-6">
-            <Stat value={String(groveStats.total)} label="Trees on the estate" />
+            <Stat value={groveFacts.treesOnEstate} label="Trees on the Estate" />
             <Stat
-              value={String(groveStats.available)}
+              value={String(groveFacts.availableThisSeason)}
               label="Available this season"
             />
-            <Stat value="4" label="Blocks" />
+            <Stat
+              value={String(openZoneNames.length)}
+              label={
+                openZoneNames.length === 1
+                  ? "Block available now"
+                  : "Blocks available now"
+              }
+              note={openZoneNames.join(", ")}
+            />
           </dl>
         </div>
       </Section>
 
       <Section top={false}>
-        <GroveMap taken={taken} />
+        <LandMap takenCellIds={taken} />
       </Section>
 
       <Section className="border-t border-line bg-paper-raised">
@@ -80,9 +91,6 @@ export default async function GrovePage() {
                   {block.note}
                 </p>
               )}
-              <p className="mt-5 border-t border-line pt-4 font-mono text-[12px] text-stone">
-                {block.rows * block.cols} trees
-              </p>
             </div>
           ))}
         </div>
@@ -116,7 +124,15 @@ export default async function GrovePage() {
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({
+  value,
+  label,
+  note,
+}: {
+  value: string;
+  label: string;
+  note?: string;
+}) {
   return (
     <div>
       <dt className="sr-only">{label}</dt>
@@ -127,6 +143,11 @@ function Stat({ value, label }: { value: string; label: string }) {
         <span className="mt-2 block text-[13px] leading-snug text-stone">
           {label}
         </span>
+        {note && (
+          <span className="mt-0.5 block text-[13px] leading-snug text-ink">
+            {note}
+          </span>
+        )}
       </dd>
     </div>
   );

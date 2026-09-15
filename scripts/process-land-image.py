@@ -648,10 +648,10 @@ def main():
         # code prefixes the spot ids ("A-R41-C55") and name is what certificates show.
         # Neither may change once spots in the zone have been adopted.
         "zones": [
-            {"id": "small-parcel", "code": "A", "name": "East parcel", "label": "Available", "status": "active",
+            {"id": "small-parcel", "code": "A", "name": "La Nave", "label": "Available", "status": "active",
              "polygon": normalise(small_poly, origin, size),
              "exclusions": [normalise(e, origin, size) for e in exclusions["small-parcel"]]},
-            {"id": "large-parcel", "code": "B", "name": "Main parcel", "label": "Coming soon", "status": "locked",
+            {"id": "large-parcel", "code": "B", "name": "The rest of La Finca", "label": "Coming soon", "status": "locked",
              "polygon": normalise(large_poly, origin, size),
              "exclusions": [normalise(e, origin, size) for e in exclusions["large-parcel"]]},
         ],

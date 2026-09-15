@@ -31,8 +31,18 @@ export type Adoption = {
   customerName: string;
   email: string;
   status: AdoptionStatus;
+  /** The harvest season this adoption currently covers. Moves on with each renewal. */
   season: number;
   stripeSessionId?: string;
+  /** Set once checkout completes. Adoptions renew yearly as a Stripe subscription. */
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  /** When Stripe next charges for renewal, ISO date. */
+  renewsAt?: string;
+  /** The customer cancelled: the adoption ends at renewsAt instead of renewing. */
+  cancelAtPeriodEnd?: boolean;
+  /** Renewal invoices already counted, so a webhook Stripe retries cannot count one twice. */
+  renewalInvoices?: string[];
   createdAt: string;
   giftFrom?: string;
   giftMessage?: string;
@@ -131,17 +141,85 @@ export async function getAdoptionBySession(
   return db.adoptions.find((a) => a.stripeSessionId === sessionId) ?? null;
 }
 
+export type Billing = Pick<
+  Adoption,
+  "stripeCustomerId" | "stripeSubscriptionId" | "renewsAt" | "cancelAtPeriodEnd"
+>;
+
+/** Marks a paid checkout's adoption active and records its subscription. */
 export async function activateAdoption(
   sessionId: string,
+  billing: Billing = {},
 ): Promise<Adoption | null> {
   return exclusive(async () => {
     const db = await read();
     const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
     if (!adoption) return null;
     adoption.status = "active";
+    Object.assign(adoption, withoutUndefined(billing));
     await write(db);
     return adoption;
   });
+}
+
+/**
+ * A checkout that expired unpaid. Its adoption was holding spots; releasing
+ * them lets someone else adopt. An adoption that was paid is left alone.
+ */
+export async function expireAdoption(sessionId: string): Promise<void> {
+  await exclusive(async () => {
+    const db = await read();
+    const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
+    if (!adoption || adoption.status !== "pending") return;
+    adoption.status = "cancelled";
+    await write(db);
+  });
+}
+
+/**
+ * Keeps an adoption in step with its subscription: the next renewal date,
+ * whether the customer has cancelled, and the end of the adoption when the
+ * subscription itself ends, which also returns its spots to the map.
+ */
+export async function syncSubscription(
+  subscriptionId: string,
+  update: Billing & { ended?: boolean },
+): Promise<void> {
+  await exclusive(async () => {
+    const db = await read();
+    const adoption = db.adoptions.find(
+      (a) => a.stripeSubscriptionId === subscriptionId,
+    );
+    if (!adoption) return;
+    const { ended, ...billing } = update;
+    Object.assign(adoption, withoutUndefined(billing));
+    if (ended) adoption.status = "cancelled";
+    await write(db);
+  });
+}
+
+/** A yearly renewal was paid: the adoption moves on to the next season. */
+export async function recordRenewal(
+  subscriptionId: string,
+  invoiceId: string,
+): Promise<void> {
+  await exclusive(async () => {
+    const db = await read();
+    const adoption = db.adoptions.find(
+      (a) => a.stripeSubscriptionId === subscriptionId,
+    );
+    if (!adoption || adoption.renewalInvoices?.includes(invoiceId)) return;
+    adoption.renewalInvoices = [...(adoption.renewalInvoices ?? []), invoiceId];
+    adoption.season += 1;
+    adoption.status = "active";
+    await write(db);
+  });
+}
+
+function withoutUndefined<T extends object>(value: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, v]) => v !== undefined),
+  ) as Partial<T>;
 }
 
 /** Tree and spot ids already spoken for, so the maps can grey them out. */

@@ -7,10 +7,11 @@
  */
 
 import { getCell, land } from "./land";
+import { groveFacts } from "./site";
 import { blocks, getTree } from "./trees";
 
 export type PlotDescription = {
-  /** One line for the certificate, e.g. "East parcel". */
+  /** One line for the certificate, e.g. "La Nave". */
   place: string;
   facts: { label: string; value: string }[];
 };
@@ -22,9 +23,10 @@ export function describePlot(id: string): PlotDescription {
     return {
       place: cell.zone.name,
       facts: [
-        { label: "Parcel", value: cell.zone.name },
-        { label: "Spot", value: `${metres} × ${metres} m` },
+        { label: "Block", value: cell.zone.name },
         { label: "Variety", value: "Picual" },
+        { label: "Age", value: groveFacts.treeAge },
+        { label: "Spot", value: `${metres} × ${metres} m` },
       ],
     };
   }
@@ -33,11 +35,10 @@ export function describePlot(id: string): PlotDescription {
   const block = tree && blocks.find((b) => b.id === tree.block);
   if (tree && block) {
     return {
-      place: `${block.name}, ${tree.age} years old`,
+      place: block.name,
       facts: [
         { label: "Block", value: block.name },
-        { label: "Age", value: `${tree.age} years` },
-        { label: "Last season", value: `${tree.lastYield} L` },
+        { label: "Age", value: groveFacts.treeAge },
       ],
     };
   }

@@ -42,6 +42,12 @@ export const site = {
   estate: "Setenil de las Bodegas, Andalusia in Southern Spain",
   /** What the maps call the whole property. */
   estateName: "La Finca",
+  /**
+   * When adoptions for this harvest close, with the Madrid offset. The header
+   * counts down to it and hides the countdown once it has passed. October 2026
+   * is still summer time in Spain, so the offset is +02:00.
+   */
+  adoptionsCloseAt: "2026-10-15T23:59:59+02:00",
   email: "hello@fenara.com",
   infoEmail: "info@fenarafarms.com",
   instagram: "https://instagram.com/",
@@ -49,11 +55,32 @@ export const site = {
 } as const;
 
 /**
+ * Headline facts about the grove, shown on the home and grove pages. Set by
+ * hand rather than counted from the map. Which blocks are open comes from the
+ * zone status in assets/land-zones.json instead.
+ */
+export const groveFacts = {
+  treesOnEstate: "Over 1,000",
+  availableThisSeason: 100,
+  treeAge: "20–35 years",
+};
+
+/**
  * Change these two lines to switch the whole site to euros.
  * currency must be a Stripe-supported ISO code, lowercase.
  */
 export const currency = "usd";
 export const currencySymbol = "$";
+
+/** A date as the estate would write it, e.g. "15 October 2026", in Madrid time. */
+export function formatDate(date: string | number | Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Europe/Madrid",
+  }).format(new Date(date));
+}
 
 export function formatPrice(cents: number): string {
   const whole = cents / 100;
@@ -66,7 +93,7 @@ export type Tier = {
   englishName: string;
   /** The one-line voice of the tier, e.g. "This is my tree." */
   tagline: string;
-  /** Annual price in cents. */
+  /** Yearly price in cents. Stripe charges it at checkout and again on each renewal. */
   price: number;
   trees: number;
   /** Total litres of oil per season. */
@@ -75,9 +102,9 @@ export type Tier = {
   shipments: string;
   blurb: string;
   includes: string[];
-  /** Roughly how many of this tier are left this season. Real inventory. */
-  remaining: number;
   featured?: boolean;
+  /** A short tab shown above the card, e.g. "Top adopter". */
+  badge?: string;
 };
 
 export const tiers: Tier[] = [
@@ -99,13 +126,12 @@ export const tiers: Tier[] = [
       "Your name displayed with your tree",
       "Season updates from flowering through harvest",
     ],
-    remaining: 34,
   },
   {
     id: "la-familia",
     name: "La Familia",
     englishName: "Two trees",
-    tagline: "These are our trees.",
+    tagline: "These are our family trees.",
     price: 29500,
     trees: 2,
     litres: 3,
@@ -120,8 +146,8 @@ export const tiers: Tier[] = [
       "Season updates from flowering through harvest",
       "First refusal on your trees next season",
     ],
-    remaining: 12,
     featured: true,
+    badge: "Top adopter",
   },
   {
     id: "el-olivar",
@@ -142,7 +168,6 @@ export const tiers: Tier[] = [
       "Season updates from flowering through harvest",
       "First refusal on your trees next season",
     ],
-    remaining: 5,
   },
 ];
 

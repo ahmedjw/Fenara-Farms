@@ -11,7 +11,11 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Why is the adoption annual?",
-    a: "Because the grove produces once a year. Each adoption covers one harvest season. To keep your tree registered in your name and to receive the next harvest, you renew before the following season. Your tree stays part of the grove either way, and we keep caring for it.",
+    a: "Because the grove produces once a year. Each adoption covers one year and the harvest in it, and renews automatically so your tree stays registered in your name for the next harvest. Your tree stays part of the grove either way, and we keep caring for it.",
+  },
+  {
+    q: "What happens after the first year?",
+    a: "Adoptions renew annually, but you’re always in control and can cancel before renewal. We’ll notify you ahead of time so you can decide whether to continue. When your adoption renews, Stripe, our payment provider, charges the card you adopted with for the next year. You can cancel from your grove page at any time before your renewal date.",
   },
   {
     q: "What does regenerative farming actually mean here?",
