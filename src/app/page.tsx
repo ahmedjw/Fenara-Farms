@@ -51,6 +51,10 @@ export default async function HomePage() {
                 •
               </span>
               Andalusia
+              <span aria-hidden className="mx-2.5">
+                •
+              </span>
+              Spain
             </p>
             <h1 className="display mt-6 text-[clamp(2.75rem,6.5vw,5.25rem)] leading-[1.02] text-paper">
               Adopt an Olive Tree
