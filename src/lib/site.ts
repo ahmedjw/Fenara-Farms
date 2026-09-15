@@ -42,6 +42,12 @@ export const site = {
   estate: "Setenil de las Bodegas, Andalusia in Southern Spain",
   /** What the maps call the whole property. */
   estateName: "La Finca",
+  /**
+   * When adoptions for this harvest close, with the Madrid offset. The header
+   * counts down to it and hides the countdown once it has passed. October 2026
+   * is still summer time in Spain, so the offset is +02:00.
+   */
+  adoptionsCloseAt: "2026-10-15T23:59:59+02:00",
   email: "hello@fenara.com",
   infoEmail: "info@fenarafarms.com",
   instagram: "https://instagram.com/",
