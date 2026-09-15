@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Photo } from "@/components/photo";
-import { GroveMap } from "@/components/grove-map";
+import { LandMap } from "@/components/land-map";
 import { ButtonLink, Section } from "@/components/ui";
+import { openZoneNames } from "@/lib/land";
 import { groveFacts } from "@/lib/site";
 import { blocks } from "@/lib/trees";
 import { takenTreeIds } from "@/lib/store";
@@ -9,7 +10,7 @@ import { takenTreeIds } from "@/lib/store";
 export const metadata: Metadata = {
   title: "The grove",
   description:
-    "Every Picual olive tree at Fenara Farms in Andalusia, drawn to plan. Browse the four blocks and see which trees are available to adopt.",
+    "The Picual olive grove at Fenara Farms in Andalusia, seen from above, with the spots open for adoption this season.",
 };
 
 /* The plan is the point of this page, so keep availability close to live. */
@@ -30,7 +31,7 @@ export default async function GrovePage() {
               {groveFacts.treesOnEstate} Picual olive trees across four blocks
               on a single estate in Andalusia. This season,{" "}
               {groveFacts.availableThisSeason} of them are available to adopt in{" "}
-              {groveFacts.openBlocks.join(" and ")}.
+              {openZoneNames.join(" and ")}.
             </p>
           </div>
           <dl className="grid grid-cols-3 gap-6 self-end border-t border-line-strong pt-6">
@@ -40,20 +41,20 @@ export default async function GrovePage() {
               label="Available this season"
             />
             <Stat
-              value={String(groveFacts.openBlocks.length)}
+              value={String(openZoneNames.length)}
               label={
-                groveFacts.openBlocks.length === 1
+                openZoneNames.length === 1
                   ? "Block available now"
                   : "Blocks available now"
               }
-              note={groveFacts.openBlocks.join(", ")}
+              note={openZoneNames.join(", ")}
             />
           </dl>
         </div>
       </Section>
 
       <Section top={false}>
-        <GroveMap taken={taken} />
+        <LandMap takenCellIds={taken} />
       </Section>
 
       <Section className="border-t border-line bg-paper-raised">

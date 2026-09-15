@@ -24,7 +24,7 @@ export type LandZone = {
   id: string;
   /** Prefix for spot ids. */
   code: string;
-  /** Shown on certificates, e.g. "East parcel". */
+  /** The block's name, shown on the map and certificates, e.g. "La Nave". */
   name: string;
   /** Shown on the map, e.g. "Coming soon". */
   label: string;
@@ -157,6 +157,11 @@ function zoneCells(zone: LandZone): LandCell[] {
   }
   return cells;
 }
+
+/** Names of the blocks open for adoption now, e.g. ["La Nave"]. */
+export const openZoneNames = land.zones
+  .filter((z) => z.status === "active")
+  .map((z) => z.name);
 
 /** Every spot that can be adopted, across all active zones. */
 export const openCells: LandCell[] = land.zones

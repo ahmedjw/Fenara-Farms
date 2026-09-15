@@ -98,18 +98,25 @@ Everything commercial is in [`src/lib/site.ts`](src/lib/site.ts).
 - To switch to euros, change `currency` to `"eur"` and `currencySymbol` to `"€"`.
 - Tier names, taglines, badges and what is included are all in the `tiers`
   array.
-- The grove's headline numbers (trees on the estate, trees available this season,
-  the blocks open this season and the age range of the trees) are in
-  `groveFacts`.
+- The grove's headline numbers (trees on the estate, trees available this season
+  and the age range of the trees) are in `groveFacts`. Which blocks are open
+  comes from each zone's `status` in `assets/land-zones.json`.
 
 ## Changing the grove
 
-[`src/lib/trees.ts`](src/lib/trees.ts) generates the grove plan: four blocks,
-their names and descriptions, and a sample of trees. Tree positions come from a
-seeded generator so the map is identical on every load.
+The map on the home, grove and adoption pages is the surveyor's aerial plan in
+`assets/land-clean-cropped.png`, with its blocks, buildings and tree spots in
+[`assets/land-zones.json`](assets/land-zones.json). Both are built by
+[`scripts/process-land-image.py`](scripts/process-land-image.py); its docstring
+explains how to re-run it.
 
-When you have a real survey of the estate, replace `buildGrove()` with a loader
-that reads your own coordinates. Nothing else needs to change.
+- To open another block for adoption, set its zone's `status` to `"active"`.
+- A zone's `name` is what the map and certificates call it, e.g. La Nave.
+- Do not change the image crop, `cellSizeMeters` or a zone's `code` once spots
+  have been adopted: spot ids are derived from them.
+
+[`src/lib/trees.ts`](src/lib/trees.ts) holds the four block names and the tree
+ids used by adoptions made before the land map, so those still display.
 
 ---
 
@@ -158,13 +165,14 @@ src/
     api/stripe/webhook/          marks adoptions paid, follows renewals
     api/account/  api/contact/
   components/
-    grove-map.tsx                the estate plan, browse and select modes
+    land-map.tsx                 the aerial estate plan, browsing and picking spots
     adopt-flow.tsx               the 4 step flow
     certificate.tsx              printable adoption certificate
     photo.tsx                    photo slot with labelled placeholder
   lib/
     site.ts                      brand, tiers, prices, currency
-    trees.ts                     the grove
+    trees.ts                     block names, and tree ids from before the land map
+    land.ts                      zones and spots from assets/land-zones.json
     store.ts                     adoption persistence
     faq.ts  stripe.ts
 ```

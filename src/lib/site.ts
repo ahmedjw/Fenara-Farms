@@ -56,14 +56,12 @@ export const site = {
 
 /**
  * Headline facts about the grove, shown on the home and grove pages. Set by
- * hand rather than counted from the grove plan, which shows a sample of the
- * trees rather than all of them.
+ * hand rather than counted from the map. Which blocks are open comes from the
+ * zone status in assets/land-zones.json instead.
  */
 export const groveFacts = {
   treesOnEstate: "Over 1,000",
   availableThisSeason: 100,
-  /** Blocks open for adoption this season. */
-  openBlocks: ["La Nave"],
   treeAge: "20–35 years",
 };
 

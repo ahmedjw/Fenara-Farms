@@ -18,10 +18,7 @@ export type Tree = {
   /** Position as a percentage of the map viewport. */
   x: number;
   y: number;
-  age: number;
   status: TreeStatus;
-  /** Litres of oil this tree produced last season. */
-  lastYield: number;
 };
 
 export type BlockId = "nave" | "lago" | "cortijo" | "alberca";
@@ -107,12 +104,7 @@ function buildGrove(): Tree[] {
           block: block.id,
           x: +(block.box.x + col * stepX + jx).toFixed(2),
           y: +(block.box.y + row * stepY + jy).toFixed(2),
-          age:
-            block.id === "lago"
-              ? Math.round(120 + rand() * 95)
-              : Math.round(28 + rand() * 62),
           status,
-          lastYield: +(1.4 + rand() * 2.3).toFixed(1),
         });
       }
     }
@@ -130,9 +122,3 @@ export function getTree(id: string): Tree | undefined {
 export function getBlock(id: BlockId) {
   return blocks.find((b) => b.id === id);
 }
-
-export const groveStats = {
-  total: grove.length,
-  available: grove.filter((t) => t.status === "available").length,
-  oldest: grove.reduce((a, b) => (a.age > b.age ? a : b)).age,
-};

@@ -10,11 +10,12 @@ import {
 import { EvooSeal } from "@/components/evoo-seal";
 import { Photo } from "@/components/photo";
 import { Reveal } from "@/components/reveal";
-import { GroveMap } from "@/components/grove-map";
+import { LandMap } from "@/components/land-map";
 import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { ButtonLink, Eyebrow, Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
+import { openZoneNames } from "@/lib/land";
 import { groveFacts } from "@/lib/site";
 import { takenTreeIds } from "@/lib/store";
 
@@ -201,12 +202,12 @@ export default async function HomePage() {
           <p className="max-w-[38ch] text-[15px] leading-relaxed text-stone">
             {groveFacts.treesOnEstate} Picual trees across four blocks.{" "}
             {groveFacts.availableThisSeason} are available to adopt this season,
-            in {groveFacts.openBlocks.join(" and ")}.
+            in {openZoneNames.join(" and ")}.
           </p>
         </div>
 
         <div className="mt-10">
-          <GroveMap taken={taken} />
+          <LandMap takenCellIds={taken} />
         </div>
       </Section>
 

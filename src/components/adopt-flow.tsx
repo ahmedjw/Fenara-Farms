@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { LandMap } from "./land-map";
 import { Button } from "./ui";
+import { openZoneNames } from "@/lib/land";
 import { formatDate, formatPrice, type Tier } from "@/lib/site";
 
 /**
@@ -162,8 +163,8 @@ export function AdoptFlow({
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
                   Pick {tier.trees} {tier.trees === 1 ? "spot" : "spots"} on the
                   plan below for your {tier.trees === 1 ? "tree" : "trees"}.
-                  This season the parcel east of the road is open; the rest of
-                  the estate follows later. Grey squares are already adopted.
+                  This season {openZoneNames.join(" and ")} is open; the rest of
+                  La Finca follows later. Grey squares are already adopted.
                 </p>
                 <LandMap
                   limit={tier.trees}
