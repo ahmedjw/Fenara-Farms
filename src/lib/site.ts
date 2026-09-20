@@ -43,11 +43,12 @@ export const site = {
   /** What the maps call the whole property. */
   estateName: "La Finca",
   /**
-   * When adoptions for this harvest close, with the Madrid offset. The header
-   * counts down to it and hides the countdown once it has passed. October 2026
-   * is still summer time in Spain, so the offset is +02:00.
+   * Order by this moment to have the oil arrive before the holidays, with the
+   * Madrid offset. The header counts down to it and hides the countdown once it
+   * has passed. Spain leaves summer time on 25 October 2026, so the offset at
+   * the end of the month is +01:00.
    */
-  adoptionsCloseAt: "2026-10-15T23:59:59+02:00",
+  orderByAt: "2026-10-31T23:59:59+01:00",
   email: "hello@fenara.com",
   infoEmail: "info@fenarafarms.com",
   instagram: "https://instagram.com/",
