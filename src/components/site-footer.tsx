@@ -40,15 +40,11 @@ export function SiteFooter() {
             <p className="mt-4 max-w-[30ch] text-[14px] leading-relaxed text-stone">
               {site.tagline}
             </p>
-            <ul className="mt-6 space-y-1.5 text-[14px] text-stone">
-              {[site.email, site.infoEmail].map((address) => (
-                <li key={address}>
-                  <a href={`mailto:${address}`} className="underline underline-offset-4 hover:text-ink">
-                    {address}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-6 text-[14px] text-stone">
+              <a href={`mailto:${site.email}`} className="underline underline-offset-4 hover:text-ink">
+                {site.email}
+              </a>
+            </p>
           </div>
 
           {columns.map((col) => (

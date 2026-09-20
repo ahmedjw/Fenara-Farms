@@ -104,19 +104,25 @@ Everything commercial is in [`src/lib/site.ts`](src/lib/site.ts).
 
 ## Changing the grove
 
-The map on the home, grove and adoption pages is the surveyor's aerial plan in
-`assets/land-clean-cropped.png`, with its blocks, buildings and tree spots in
-[`assets/land-zones.json`](assets/land-zones.json). Both are built by
-[`scripts/process-land-image.py`](scripts/process-land-image.py); its docstring
-explains how to re-run it.
+The map on the home, grove and adoption pages draws
+[`assets/farm-data.json`](assets/farm-data.json): the four plots traced from the
+estate's aerial photograph, the ridge above them, the pond in Lago, and a
+position for every tree. The file is layout only. Whether a tree is adopted
+comes from the adoption store, and every tree is Picual.
 
-- To open another block for adoption, set its zone's `status` to `"active"`.
-- A zone's `name` is what the map and certificates call it, e.g. La Nave.
-- Do not change the image crop, `cellSizeMeters` or a zone's `code` once spots
-  have been adopted: spot ids are derived from them.
+- To open another plot for adoption, add its id to `OPEN_PLOTS` in
+  [`src/lib/farm.ts`](src/lib/farm.ts).
+- Adoptions store the spot ids of the older survey map, and each adoptable tree
+  is paired with one of those spots, so opening a plot needs enough spots to go
+  round: set another zone `"active"` in
+  [`assets/land-zones.json`](assets/land-zones.json) at the same time. Customers
+  only ever see the tree number.
+- That survey map, its zones and
+  [`scripts/process-land-image.py`](scripts/process-land-image.py) are still
+  here because the spot ids come from them.
 
 [`src/lib/trees.ts`](src/lib/trees.ts) holds the four block names and the tree
-ids used by adoptions made before the land map, so those still display.
+ids used by adoptions made before either map, so those still display.
 
 ---
 
@@ -165,14 +171,15 @@ src/
     api/stripe/webhook/          marks adoptions paid, follows renewals
     api/account/  api/contact/
   components/
-    land-map.tsx                 the aerial estate plan, browsing and picking spots
+    farm-map.tsx                 the farm map, browsing plots and picking trees
     adopt-flow.tsx               the 4 step flow
     certificate.tsx              printable adoption certificate
     photo.tsx                    photo slot with labelled placeholder
   lib/
     site.ts                      brand, tiers, prices, currency
     trees.ts                     block names, and tree ids from before the land map
-    land.ts                      zones and spots from assets/land-zones.json
+    farm.ts                      plots and trees from assets/farm-data.json
+    land.ts                      the spot ids adoptions are stored under
     store.ts                     adoption persistence
     faq.ts  stripe.ts
 ```

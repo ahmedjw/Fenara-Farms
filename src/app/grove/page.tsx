@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Photo } from "@/components/photo";
-import { LandMap } from "@/components/land-map";
+import { FarmMap } from "@/components/farm-map";
 import { ButtonLink, Section } from "@/components/ui";
 import { openZoneNames } from "@/lib/land";
 import { groveFacts } from "@/lib/site";
@@ -54,7 +54,7 @@ export default async function GrovePage() {
       </Section>
 
       <Section top={false}>
-        <LandMap takenCellIds={taken} />
+        <FarmMap takenSpotIds={taken} />
       </Section>
 
       <Section className="border-t border-line bg-paper-raised">

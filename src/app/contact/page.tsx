@@ -27,16 +27,14 @@ export default function ContactPage() {
               <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
                 Email
               </dt>
-              {[site.email, site.infoEmail].map((address) => (
-                <dd key={address} className="mt-1.5 text-[16px]">
-                  <a
-                    href={`mailto:${address}`}
-                    className="border-b border-ink pb-0.5 text-ink transition-colors hover:border-brick hover:text-brick"
-                  >
-                    {address}
-                  </a>
-                </dd>
-              ))}
+              <dd className="mt-1.5 text-[16px]">
+                <a
+                  href={`mailto:${site.email}`}
+                  className="border-b border-ink pb-0.5 text-ink transition-colors hover:border-brick hover:text-brick"
+                >
+                  {site.email}
+                </a>
+              </dd>
             </div>
             <div>
               <dt className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">

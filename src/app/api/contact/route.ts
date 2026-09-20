@@ -11,7 +11,7 @@ export const runtime = "nodejs";
  *   const resend = new Resend(process.env.RESEND_API_KEY);
  *   await resend.emails.send({
  *     from: "site@fenara.com",
- *     to: "hello@fenara.com",
+ *     to: "info@fenarafarms.com",
  *     replyTo: email,
  *     subject: `[${subject}] ${name}`,
  *     text: message,

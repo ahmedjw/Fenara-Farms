@@ -9,9 +9,10 @@ import {
   Check,
   Warning,
 } from "@phosphor-icons/react";
-import { LandMap } from "./land-map";
+import { FarmMap } from "./farm-map";
 import { Button } from "./ui";
 import { openZoneNames } from "@/lib/land";
+import { describePlot } from "@/lib/plots";
 import { formatDate, formatPrice, type Tier } from "@/lib/site";
 
 /**
@@ -161,22 +162,22 @@ export function AdoptFlow({
             {step === 0 && (
               <div>
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
-                  Pick {tier.trees} {tier.trees === 1 ? "spot" : "spots"} on the
-                  plan below for your {tier.trees === 1 ? "tree" : "trees"}.
-                  This season {openZoneNames.join(" and ")} is open; the rest of
-                  La Finca follows later. Grey squares are already adopted.
+                  Pick {tier.trees} {tier.trees === 1 ? "tree" : "trees"} from
+                  the map below. This season {openZoneNames.join(" and ")} is
+                  open; the other plots follow later. Hollow dots are already
+                  adopted.
                 </p>
-                <LandMap
+                <FarmMap
                   limit={tier.trees}
-                  takenCellIds={taken}
-                  selectedCellIds={selected}
+                  takenSpotIds={taken}
+                  selectedSpotIds={selected}
                   onSelect={(_, ids) => setSelected(ids)}
                 />
                 <p className="mt-5 text-[14px] text-stone">
                   {selected.length} of {tier.trees} chosen
                   {selected.length > 0 && (
                     <span className="ml-2 font-mono text-[13px] text-ink">
-                      {selected.join(", ")}
+                      {selected.map((id) => describePlot(id).label).join(", ")}
                     </span>
                   )}
                 </p>
@@ -196,7 +197,7 @@ export function AdoptFlow({
                         htmlFor={`name-${id}`}
                         className="block text-[13px] font-medium text-ink"
                       >
-                        Tree {id}
+                        Tree {describePlot(id).label}
                       </label>
                       <input
                         id={`name-${id}`}
@@ -335,7 +336,7 @@ export function AdoptFlow({
                       {selected.map((id) => (
                         <li key={id}>
                           <span className="font-mono text-[13px] text-stone">
-                            {id}
+                            {describePlot(id).label}
                           </span>{" "}
                           {names[id]}
                         </li>

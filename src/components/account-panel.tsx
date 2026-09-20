@@ -222,7 +222,7 @@ function GroveDashboard({
           {adoption.trees.map((id) => (
             <li key={id} className="bg-paper-raised p-6">
               <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
-                {id}
+                {describePlot(id).label}
               </p>
               <p className="display mt-1.5 text-[26px] leading-tight text-olive">
                 {adoption.names[id]}
