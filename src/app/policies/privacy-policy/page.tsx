@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
         {
           heading: "Your rights",
           body: [
-            "You can ask for a copy of what we hold, ask us to correct it, ask us to delete it, or ask us to stop emailing you. Write to hello@fenara.com and we will action it.",
+            "You can ask for a copy of what we hold, ask us to correct it, ask us to delete it, or ask us to stop emailing you. Write to info@fenarafarms.com and we will action it.",
             "If you are in the EU or the UK you have these rights under the GDPR, and you can complain to your national data protection authority if you are not satisfied with how we handle your request.",
           ],
         },

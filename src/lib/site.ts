@@ -49,8 +49,7 @@ export const site = {
    * the end of the month is +01:00.
    */
   orderByAt: "2026-10-31T23:59:59+01:00",
-  email: "hello@fenara.com",
-  infoEmail: "info@fenarafarms.com",
+  email: "info@fenarafarms.com",
   instagram: "https://instagram.com/",
   url: resolveSiteUrl(),
 } as const;
