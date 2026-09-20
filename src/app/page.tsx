@@ -10,7 +10,7 @@ import {
 import { EvooSeal } from "@/components/evoo-seal";
 import { Photo } from "@/components/photo";
 import { Reveal } from "@/components/reveal";
-import { LandMap } from "@/components/land-map";
+import { FarmMap } from "@/components/farm-map";
 import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { ButtonLink, Eyebrow, Section } from "@/components/ui";
@@ -207,7 +207,7 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-10">
-          <LandMap takenCellIds={taken} />
+          <FarmMap takenSpotIds={taken} />
         </div>
       </Section>
 
