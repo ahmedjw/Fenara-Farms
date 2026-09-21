@@ -3,6 +3,7 @@ import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
+import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Adopt an olive tree",
@@ -37,10 +38,10 @@ export default function AdoptPage() {
               The grove produces once a year, so each adoption covers one year
               and its harvest. It renews automatically: Stripe charges your card
               for the next year on your renewal date, and your tree stays
-              registered in your name. You can cancel any time before renewal
-              from your grove page, and we let you know before each one. Your
-              tree remains part of the Fenara Farms grove either way, continuing
-              to grow and be cared for as we restore the land.
+              registered in your name. You choose whether to renew, and renewal
+              can be switched off: write to us at {site.email} and we will sort
+              it. Your tree remains part of the Fenara Farms grove either way,
+              continuing to grow and be cared for as we restore the land.
             </p>
           </div>
 

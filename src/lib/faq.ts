@@ -1,3 +1,5 @@
+import { site } from "./site";
+
 export type FaqItem = { q: string; a: string };
 
 export const faq: FaqItem[] = [
@@ -15,7 +17,7 @@ export const faq: FaqItem[] = [
   },
   {
     q: "What happens after the first year?",
-    a: "Adoptions renew annually, but you’re always in control and can cancel before renewal. We’ll notify you ahead of time so you can decide whether to continue. When your adoption renews, Stripe, our payment provider, charges the card you adopted with for the next year. You can cancel from your grove page at any time before your renewal date.",
+    a: `Your adoption covers one year. You can choose whether to renew, and renewal can be switched off. Just write to us at ${site.email} and we’ll sort it.`,
   },
   {
     q: "What does regenerative farming actually mean here?",

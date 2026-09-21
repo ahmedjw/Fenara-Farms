@@ -32,14 +32,14 @@ export default function TermsPage() {
           heading: "Adoption period and renewal",
           body: [
             "Each adoption lasts one year from the date of purchase and includes the oil from the harvest that follows your adoption, as described in our Shipping & Returns policy.",
-            "Adoptions renew automatically every year until you cancel. On each renewal date, Stripe, our payment provider, charges the card you adopted with the yearly price of your plan. We will let you know ahead of each renewal.",
+            "Adoptions renew automatically every year until you cancel. On each renewal date, Stripe, our payment provider, charges the card you adopted with the yearly price of your plan.",
             "New adopters receive the plans currently offered on our website. If we change a plan’s price or what it includes, we will tell you before your next renewal, and you can cancel before the change takes effect.",
           ],
         },
         {
           heading: "Cancelling your renewal",
           body: [
-            "You can cancel your renewal at any time before your renewal date from your grove page on our website, or by writing to us. Cancelling stops future charges. Your adoption continues until the end of the year you have already paid for, and then ends.",
+            "You can cancel your renewal at any time before your renewal date by writing to us at info@fenarafarms.com. Cancelling stops future charges. Your adoption continues until the end of the year you have already paid for, and then ends.",
             "When an adoption ends, your trees’ spots return to the grove map and may be adopted by someone else.",
           ],
         },

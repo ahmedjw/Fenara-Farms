@@ -5,7 +5,7 @@ import { Certificate } from "@/components/certificate";
 import { Section } from "@/components/ui";
 import { getAdoptionBySession, activateAdoption } from "@/lib/store";
 import { billingOfSession, getStripe } from "@/lib/stripe";
-import { formatDate, getTier } from "@/lib/site";
+import { formatDate, getTier, site } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Your adoption is confirmed" };
 export const dynamic = "force-dynamic";
@@ -87,8 +87,8 @@ export default async function SuccessPage({
             <p className="mt-4 max-w-[54ch] text-[15px] leading-relaxed text-stone">
               Your adoption renews every year
               {adoption.renewsAt ? `, next on ${formatDate(adoption.renewsAt)}` : ""}
-              , and Stripe charges the card you used unless you cancel before
-              then. You can cancel any time from your grove page.
+              , and Stripe charges the card you used unless renewal is switched
+              off. Write to us at {site.email} and we will sort it.
             </p>
 
             {adoption.status === "pending" && (

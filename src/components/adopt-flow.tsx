@@ -13,7 +13,7 @@ import { FarmMap } from "./farm-map";
 import { Button } from "./ui";
 import { openZoneNames } from "@/lib/land";
 import { describePlot } from "@/lib/plots";
-import { formatDate, formatPrice, type Tier } from "@/lib/site";
+import { formatDate, formatPrice, site, type Tier } from "@/lib/site";
 
 /**
  * The adoption flow.
@@ -380,9 +380,9 @@ export function AdoptFlow({
                   <p className="text-[14px] leading-relaxed text-ink">
                     Your adoption renews automatically every year. Stripe charges{" "}
                     {formatPrice(tier.price)} to your card today and again on{" "}
-                    {formatDate(oneYearFromNow())} and each year after, until you
-                    cancel. You can cancel any time before a renewal from your
-                    grove page, and we let you know before each renewal.
+                    {formatDate(oneYearFromNow())} and each year after. Renewal
+                    can be switched off: write to us at {site.email} and we will
+                    sort it.
                   </p>
                 </div>
 
