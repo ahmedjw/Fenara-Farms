@@ -17,7 +17,6 @@ const columns = [
       { href: "/adopt", label: "Adopt a tree" },
       { href: "/adopt#included", label: "What is included" },
       { href: "/faq", label: "FAQ" },
-      { href: "/account", label: "Your grove" },
     ],
   },
   {
