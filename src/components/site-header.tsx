@@ -9,9 +9,9 @@ import { OrderByBanner } from "./order-by-banner";
 import { ButtonLink } from "./ui";
 
 const nav = [
-  { href: "/story", label: "Our story" },
-  { href: "/grove", label: "The grove" },
-  { href: "/oil", label: "The oil" },
+  { href: "/story", label: "Our Story" },
+  { href: "/grove", label: "The Grove" },
+  { href: "/oil", label: "The Oil" },
   { href: "/faq", label: "FAQ" },
 ];
 
@@ -60,7 +60,7 @@ export function SiteHeader() {
               Account
             </Link>
             <ButtonLink href="/adopt" className="hidden px-5 py-2.5 sm:inline-flex">
-              Adopt a tree
+              Adopt a Tree
             </ButtonLink>
             <button
               type="button"
@@ -87,7 +87,7 @@ export function SiteHeader() {
                 </Link>
               ))}
               <ButtonLink href="/adopt" className="mt-4 w-full">
-                Adopt a tree
+                Adopt a Tree
               </ButtonLink>
             </nav>
           </div>

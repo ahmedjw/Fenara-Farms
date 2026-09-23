@@ -24,7 +24,7 @@ export function EvooSeal({ className = "" }: { className?: string }) {
     <svg
       viewBox="0 0 200 200"
       role="img"
-      aria-label="Extra virgin olive oil, cold extracted in Andalusia"
+      aria-label="Extra virgin olive oil, cold-extracted in Andalusia"
       className={className}
     >
       <defs>

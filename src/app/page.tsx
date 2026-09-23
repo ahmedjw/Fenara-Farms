@@ -15,7 +15,7 @@ import { TierCards } from "@/components/tier-cards";
 import { FaqAccordion } from "@/components/faq-accordion";
 import { ButtonLink, Eyebrow, Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
-import { openZoneNames } from "@/lib/land";
+import { adoptableTrees, openPlotNames } from "@/lib/farm";
 import { groveFacts } from "@/lib/site";
 import { takenTreeIds } from "@/lib/store";
 
@@ -86,7 +86,7 @@ export default async function HomePage() {
             Silver Medal, Córdoba Mezquita Olive Oil Competition 2025
           </span>
           <span className="text-[14px] text-stone">Single origin Picual</span>
-          <span className="text-[14px] text-stone">Cold extracted</span>
+          <span className="text-[14px] text-stone">Cold-extracted</span>
           <span className="text-[14px] text-stone">Regeneratively farmed</span>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default async function HomePage() {
             {
               icon: Drop,
               title: "Taste the harvest",
-              body: "The olives are picked at their peak and cold extracted within hours. Your oil is bottled from that harvest and sent to you.",
+              body: "The olives are picked at their peak and cold-extracted within hours. Your oil is bottled from that harvest and sent to you.",
             },
           ].map((step, i) => {
             const Icon = step.icon;
@@ -200,9 +200,10 @@ export default async function HomePage() {
             The estate, drawn to plan.
           </h2>
           <p className="max-w-[38ch] text-[15px] leading-relaxed text-stone">
-            {groveFacts.treesOnEstate} Picual trees across four blocks.{" "}
-            {groveFacts.availableThisSeason} are available to adopt this season,
-            in {openZoneNames.join(" and ")}.
+            {groveFacts.treesOnEstate} Picual trees across four blocks. Only{" "}
+            {openPlotNames} is open this season, and{" "}
+            {adoptableTrees.length} of its trees can be adopted. The other
+            three blocks follow in later seasons.
           </p>
         </div>
 
@@ -256,7 +257,7 @@ export default async function HomePage() {
               Oil from your own harvest
             </h3>
             <p className="mt-3 text-[15px] leading-relaxed text-stone">
-              Extra virgin, cold extracted, bottled from the season your tree
+              Extra virgin, cold-extracted, bottled from the season your tree
               produced it.
             </p>
           </div>
@@ -282,7 +283,7 @@ export default async function HomePage() {
           </h2>
           <p className="mt-7 text-[17px] leading-relaxed text-olive-soft">
             This is not oil sitting on a shelf waiting for a label. It is the
-            harvest from a living grove, grown on our estate in Andalusia and
+            harvest of a living grove, grown on our estate in Andalusia and
             cared for throughout the year.
           </p>
         </div>
@@ -291,7 +292,7 @@ export default async function HomePage() {
           {[
             "Single origin estate harvest",
             "Extra virgin",
-            "Cold extracted",
+            "Cold-extracted",
             "Regeneratively farmed",
             "Small batch production",
           ].map((spec) => (
@@ -344,7 +345,7 @@ export default async function HomePage() {
               Nothing arrives with a price on it.
             </p>
             <ButtonLink href="/adopt" variant="outline" className="mt-8">
-              Adopt a tree
+              Adopt a Tree
             </ButtonLink>
           </div>
         </div>
@@ -354,7 +355,7 @@ export default async function HomePage() {
       <Section className="border-t border-line">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.4fr] lg:gap-16">
           <h2 className="display text-[clamp(2rem,4.4vw,3.25rem)] leading-tight text-olive">
-            Questions people ask.
+            Questions People Ask.
           </h2>
           <div>
             <FaqAccordion items={faq.slice(0, 5)} />
@@ -373,7 +374,7 @@ export default async function HomePage() {
       <Section className="border-t border-line bg-olive text-paper">
         <div className="mx-auto max-w-[44ch] text-center">
           <h2 className="display text-[clamp(2.25rem,5vw,3.5rem)] leading-[1.06] text-paper">
-            From our grove to your table.
+            From Our Grove to Your Table.
           </h2>
           <p className="mt-6 text-[16px] leading-relaxed text-olive-soft">
             Three thousand years after the first olive trees took root in
@@ -382,7 +383,7 @@ export default async function HomePage() {
           </p>
           <div className="mt-9 flex justify-center">
             <ButtonLink href="/adopt" variant="light">
-              Adopt a tree
+              Adopt a Tree
             </ButtonLink>
           </div>
         </div>

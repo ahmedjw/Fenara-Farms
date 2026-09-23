@@ -11,9 +11,15 @@ import {
 } from "@phosphor-icons/react";
 import { FarmMap } from "./farm-map";
 import { Button } from "./ui";
-import { openZoneNames } from "@/lib/land";
+import { openPlotNames } from "@/lib/farm";
 import { describePlot } from "@/lib/plots";
-import { formatDate, formatPrice, site, type Tier } from "@/lib/site";
+import {
+  formatDate,
+  formatPrice,
+  site,
+  tierTotal,
+  type Tier,
+} from "@/lib/site";
 
 /**
  * The adoption flow.
@@ -106,12 +112,17 @@ export function AdoptFlow({
               {stepNames[step]}
             </h1>
           </div>
-          <p className="display text-[34px] leading-none text-ink">
-            {formatPrice(tier.price)}
-            <span className="ml-2 font-sans text-[14px] text-stone">
-              per year
-            </span>
-          </p>
+          <div>
+            <p className="display text-[34px] leading-none text-ink">
+              {formatPrice(tier.price)}
+              <span className="ml-2 font-sans text-[14px] text-stone">
+                per year
+              </span>
+            </p>
+            <p className="mt-1.5 text-[13px] text-stone md:text-right">
+              Plus {formatPrice(tier.shipping)} shipping
+            </p>
+          </div>
         </div>
 
         <ol className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
@@ -163,9 +174,10 @@ export function AdoptFlow({
               <div>
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
                   Pick {tier.trees} {tier.trees === 1 ? "tree" : "trees"} from
-                  the map below. This season {openZoneNames.join(" and ")} is
-                  open; the other plots follow later. Hollow dots are already
-                  adopted.
+                  the map below. Only {openPlotNames} is open this season. The
+                  other three blocks are drawn so you can see the whole estate,
+                  but their trees cannot be adopted yet. Hollow dots are
+                  already adopted.
                 </p>
                 <FarmMap
                   limit={tier.trees}
@@ -360,13 +372,21 @@ export function AdoptFlow({
                       )}
                     </Summary>
                   )}
+                  <Summary label="Adoption">
+                    {formatPrice(tier.price)}{" "}
+                    <span className="text-stone">per year</span>
+                  </Summary>
+                  <Summary label="Shipping">
+                    {formatPrice(tier.shipping)}{" "}
+                    <span className="text-stone">
+                      flat rate, one shipment per harvest
+                    </span>
+                  </Summary>
                   <Summary label="Total">
                     <span className="display text-[26px] text-ink">
-                      {formatPrice(tier.price)}
+                      {formatPrice(tierTotal(tier))}
                     </span>{" "}
-                    <span className="text-stone">
-                      per year, shipping calculated at payment
-                    </span>
+                    <span className="text-stone">per year</span>
                   </Summary>
                 </dl>
 
@@ -379,7 +399,7 @@ export function AdoptFlow({
                   />
                   <p className="text-[14px] leading-relaxed text-ink">
                     Your adoption renews automatically every year. Stripe charges{" "}
-                    {formatPrice(tier.price)} to your card today and again on{" "}
+                    {formatPrice(tierTotal(tier))} to your card today and again on{" "}
                     {formatDate(oneYearFromNow())} and each year after. Renewal
                     can be switched off: write to us at {site.email} and we will
                     sort it.
@@ -394,9 +414,12 @@ export function AdoptFlow({
                       className="mt-0.5 shrink-0 text-brick"
                     />
                     <p className="text-[14px] leading-relaxed text-ink">
-                      Payments are not connected yet. Add your Stripe keys to{" "}
-                      <code className="font-mono text-[13px]">.env.local</code>{" "}
-                      and restart the server to take real payments.
+                      Payments are not connected yet. Set{" "}
+                      <code className="font-mono text-[13px]">
+                        STRIPE_SECRET_KEY
+                      </code>{" "}
+                      in the environment this site runs in, then restart or
+                      redeploy it to take real payments.
                     </p>
                   </div>
                 )}

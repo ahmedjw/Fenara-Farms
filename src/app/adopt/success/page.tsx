@@ -137,7 +137,7 @@ export default async function SuccessPage({
             ],
             [
               "After harvest",
-              "The olives are picked at their peak and cold extracted within hours. Your oil is bottled from that harvest and shipped to you.",
+              "The olives are picked at their peak and cold-extracted within hours. Your oil is bottled from that harvest and shipped to you.",
             ],
           ].map(([when, what]) => (
             <li key={when} className="border-t border-line-strong pt-5">

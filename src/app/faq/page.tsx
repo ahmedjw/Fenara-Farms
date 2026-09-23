@@ -16,10 +16,11 @@ export default function FaqPage() {
     <>
       <Section bottom={false} className="pb-8">
         <h1 className="display max-w-[16ch] text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.04] text-olive">
-          Questions people ask.
+          Questions People Ask.
         </h1>
         <p className="mt-6 max-w-[52ch] text-[17px] leading-relaxed text-stone">
-          If yours is not here, write to us. A person reads every message.
+          If you don’t find what you’re looking for here, write to us. Every
+          message is read by a real person.
         </p>
       </Section>
 

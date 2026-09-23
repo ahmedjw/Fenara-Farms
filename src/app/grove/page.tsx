@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import { Photo } from "@/components/photo";
 import { FarmMap } from "@/components/farm-map";
 import { ButtonLink, Section } from "@/components/ui";
-import { openZoneNames } from "@/lib/land";
+import { adoptableTrees, openPlotNames, plots } from "@/lib/farm";
 import { groveFacts } from "@/lib/site";
-import { blocks } from "@/lib/trees";
 import { takenTreeIds } from "@/lib/store";
 
 export const metadata: Metadata = {
-  title: "The grove",
+  title: "The Grove",
   description:
     "The Picual olive grove at Fenara Farms in Andalusia, seen from above, with the spots open for adoption this season.",
 };
@@ -25,29 +24,25 @@ export default async function GrovePage() {
         <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
           <div>
             <h1 className="display text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.04] text-olive">
-              The grove, tree by tree.
+              The Grove, Tree by Tree.
             </h1>
             <p className="mt-6 max-w-[52ch] text-[17px] leading-relaxed text-stone">
               {groveFacts.treesOnEstate} Picual olive trees across four blocks
-              on a single estate in Andalusia. This season,{" "}
-              {groveFacts.availableThisSeason} of them are available to adopt in{" "}
-              {openZoneNames.join(" and ")}.
+              on a single estate in Andalusia. One block opens at a time. This
+              season it is {openPlotNames}, where {adoptableTrees.length} trees
+              are open to adopt.
             </p>
           </div>
           <dl className="grid grid-cols-3 gap-6 self-end border-t border-line-strong pt-6">
             <Stat value={groveFacts.treesOnEstate} label="Trees on the Estate" />
             <Stat
-              value={String(groveFacts.availableThisSeason)}
-              label="Available this season"
+              value={String(adoptableTrees.length)}
+              label="Open to adopt this season"
             />
             <Stat
-              value={String(openZoneNames.length)}
-              label={
-                openZoneNames.length === 1
-                  ? "Block available now"
-                  : "Blocks available now"
-              }
-              note={openZoneNames.join(", ")}
+              value={openPlotNames}
+              label="The one block open now"
+              note="The other three open later"
             />
           </dl>
         </div>
@@ -59,12 +54,12 @@ export default async function GrovePage() {
 
       <Section className="border-t border-line bg-paper-raised">
         <h2 className="display max-w-[20ch] text-[clamp(1.9rem,4vw,2.75rem)] text-olive">
-          Four blocks, four characters.
+          Four Blocks, Four Characters.
         </h2>
         <p className="mt-5 max-w-[58ch] text-[16px] leading-relaxed text-stone">
-          The estate is not uniform. Aspect, altitude and water change how a
-          tree ripens, and you can taste the difference between blocks in the
-          same season.
+          The estate is not uniform. Aspect, altitude, and water all influence
+          how the trees ripen, and you can taste the difference between blocks
+          in the same season.
         </p>
 
         <Photo
@@ -76,21 +71,28 @@ export default async function GrovePage() {
         />
 
         <div className="mt-5 grid gap-px overflow-hidden border border-line bg-line md:grid-cols-2">
-          {blocks.map((block) => (
-            <div key={block.id} className="bg-paper-raised p-7 md:p-8">
+          {plots.map((plot) => (
+            <div key={plot.id} className="bg-paper-raised p-7 md:p-8">
               <div className="flex items-baseline justify-between gap-4">
                 <h3 className="display text-[28px] leading-none text-olive">
-                  {block.name}
+                  {plot.name}
                 </h3>
                 <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
-                  {block.prefix}
+                  {plot.code}
                 </span>
               </div>
-              {block.note && (
-                <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-stone">
-                  {block.note}
-                </p>
-              )}
+              <p className="mt-4 max-w-[46ch] text-[15px] leading-relaxed text-stone">
+                {plot.description}
+              </p>
+              <span
+                className={`mt-5 inline-block rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] ${
+                  plot.open
+                    ? "bg-olive text-paper"
+                    : "border border-line-strong text-stone"
+                }`}
+              >
+                {plot.open ? "Open to adopt now" : "Opens in a later season"}
+              </span>
             </div>
           ))}
         </div>
@@ -100,7 +102,7 @@ export default async function GrovePage() {
         <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
           <div>
             <h2 className="display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-olive">
-              Come and stand in it.
+              Come Stand in the Grove.
             </h2>
             <p className="mt-6 max-w-[44ch] text-[16px] leading-relaxed text-stone">
               Adopters are welcome at the estate by arrangement, and harvest is
@@ -108,7 +110,7 @@ export default async function GrovePage() {
               find your tree. Write to us and we will find a date.
             </p>
             <ButtonLink href="/contact" variant="outline" className="mt-8">
-              Arrange a visit
+              Arrange a Visit
             </ButtonLink>
           </div>
           <Photo

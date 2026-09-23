@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal-page";
 
-export const metadata: Metadata = { title: "Privacy policy" };
+export const metadata: Metadata = { title: "Privacy Policy" };
 
 export default function PrivacyPolicyPage() {
   return (
     <LegalPage
-      title="Privacy policy"
+      title="Privacy Policy"
       updated="September 2026"
       intro="We collect the minimum we need to register your tree, take payment and send you your oil. We do not sell your data, and we do not share it with anyone who is not part of getting your adoption to you."
       sections={[

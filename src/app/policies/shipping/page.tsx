@@ -1,5 +1,14 @@
 import type { Metadata } from "next";
 import { LegalPage } from "@/components/legal-page";
+import { formatPrice, tiers } from "@/lib/site";
+
+/** "Mi Olivo (3 bottles) is $35." for each tier, so the page cannot drift. */
+const rates = tiers
+  .map(
+    (tier) =>
+      `${tier.name}, ${tier.bottles.replace(" of 500ml", "")}: ${formatPrice(tier.shipping)}.`,
+  )
+  .join(" ");
 
 export const metadata: Metadata = { title: "Shipping & Returns" };
 
@@ -32,8 +41,9 @@ export default function ShippingPage() {
         {
           heading: "What shipping costs",
           body: [
-            "Shipping is calculated at checkout based on your delivery address and the weight of your allocation.",
-            "We keep shipping separate from the adoption price because the cost of sending a few bottles across Spain is very different from sending them across the Atlantic to California. We would rather show you the real cost than build an average shipping charge into everyone’s adoption.",
+            "Shipping is a flat rate, set by how many bottles travel rather than by how far they go.",
+            rates,
+            "It appears as its own line at checkout, separate from the adoption, and it is charged once a year alongside it — one charge for the one shipment each harvest produces.",
             "Import duties, customs charges, and taxes imposed by your country are the responsibility of the recipient, where applicable.",
           ],
         },

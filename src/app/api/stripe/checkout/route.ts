@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { currency, getTier, site } from "@/lib/site";
+import { currency, getTier, shippingLabel, site } from "@/lib/site";
 import { getCell } from "@/lib/land";
 import { createAdoption, takenTreeIds, TreesTakenError } from "@/lib/store";
 
@@ -110,6 +110,12 @@ export async function POST(request: Request) {
   try {
     // Adoptions renew every year until cancelled, so checkout starts a yearly
     // subscription. Stripe charges the plan price now and on each anniversary.
+    //
+    // Shipping is a second yearly line rather than a Stripe shipping rate:
+    // `shipping_options` is only honoured by a Checkout Session in payment
+    // mode, and this one is a subscription. As its own line it shows up
+    // separately at checkout and on every invoice, and recurs with the
+    // adoption, which is right because a shipment follows every harvest.
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer_email: email.trim(),
@@ -125,6 +131,18 @@ export async function POST(request: Request) {
               description: `${tier.trees} Picual ${
                 tier.trees === 1 ? "tree" : "trees"
               } at Fenara Farms. ${tier.bottles} from each harvest. Renews yearly until cancelled.`,
+            },
+          },
+        },
+        {
+          quantity: 1,
+          price_data: {
+            currency,
+            unit_amount: tier.shipping,
+            recurring: { interval: "year" },
+            product_data: {
+              name: `${shippingLabel}, ${tier.name}`,
+              description: `Delivery of ${tier.bottles} after harvest. Flat rate, charged once a year with the adoption.`,
             },
           },
         },

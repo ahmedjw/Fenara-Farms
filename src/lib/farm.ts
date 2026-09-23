@@ -32,6 +32,14 @@ export type FarmPlot = {
   open: boolean;
 };
 
+/** Something built on the land. No tree stands here any more. */
+export type FarmBuilding = {
+  id: string;
+  plotId: string;
+  name: string;
+  polygon: Point[];
+};
+
 export type FarmTree = {
   id: string;
   plotId: string;
@@ -59,6 +67,18 @@ export const plots: FarmPlot[] = data.plots.map((plot) => ({
 
 export const ridge = data.ridge as Point[];
 export const pond = data.pond;
+
+/**
+ * Buildings standing in the plots. They are drawn on the map and no tree is
+ * listed under them: the barn in La Nave went up over six trees, and those
+ * trees are gone from the data rather than marked unavailable.
+ */
+export const buildings: FarmBuilding[] = data.buildings.map((b) => ({
+  id: b.id,
+  plotId: b.plot,
+  name: b.name,
+  polygon: b.polygon as Point[],
+}));
 
 const plotById = new Map(plots.map((p) => [p.id, p]));
 
@@ -118,6 +138,16 @@ export function getPlot(id: string): FarmPlot | undefined {
 
 /** Trees that can be adopted at all, whether or not they already are. */
 export const adoptableTrees = trees.filter((tree) => tree.spotId);
+
+/** The plots open this season, for the copy that names them. */
+export const openPlots = plots.filter((plot) => plot.open);
+
+/** e.g. "La Nave", or "La Nave and El Lago" once a second one opens. */
+export const openPlotNames = openPlots
+  .map((p) => p.name)
+  .reduce((text, name, i, all) =>
+    i === 0 ? name : i === all.length - 1 ? `${text} and ${name}` : `${text}, ${name}`,
+  "");
 
 export function bounds(polygon: Point[]) {
   const xs = polygon.map((p) => p[0]);

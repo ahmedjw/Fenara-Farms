@@ -4,7 +4,7 @@ import { Photo } from "@/components/photo";
 import { ButtonLink, Section } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Our story",
+  title: "Our Story",
   description:
     "Three thousand years after the Phoenicians planted the first olive trees in Southern Spain, we are restoring a tired grove in Andalusia.",
 };
@@ -14,8 +14,12 @@ export default function StoryPage() {
     <>
       <Section bottom={false} className="pb-12">
         <h1 className="display max-w-[19ch] text-[clamp(2.5rem,6.5vw,4.5rem)] leading-[1.03] text-olive">
-          We decided not simply to farm the land, but to restore it.
+          We didn’t just want to farm the land. We wanted to heal it.
         </h1>
+        <p className="mt-7 max-w-[50ch] text-[17px] leading-relaxed text-stone">
+          Because this isn’t just a farm. It’s land worth restoring. Trees
+          worth protecting. And a legacy worth passing on.
+        </p>
       </Section>
 
       <div className="px-5 md:px-8">
@@ -44,18 +48,17 @@ export default function StoryPage() {
           <div className="prose-body space-y-6 text-[17px] leading-relaxed text-stone">
             <p className="display text-[clamp(1.5rem,2.6vw,2rem)] leading-[1.35] text-ink">
               Long before any of us were here, the Phoenicians crossed the
-              Mediterranean. They brought with them more than goods. They
-              brought knowledge, culture, and the olive tree, planting roots in
-              the soil of Southern Spain that would endure for thousands of
-              years.
+              Mediterranean. With them came more than goods. They brought
+              knowledge, culture, and the olive tree, planting roots in the
+              soil of Southern Spain that would endure for thousands of years.
             </p>
 
             <p>
               Olive oil has always been deeply rooted in our own culture as
               well. It has been part of our tables, our traditions, and our way
-              of bringing people together for generations. So when we found our
-              farm in Andalusia, we felt an immediate connection to something
-              much older than ourselves.
+              of bringing people together for generations. So, when we found
+              our farm in Andalusia, we felt an immediate connection to
+              something much older than ourselves.
             </p>
 
             <p className="display pt-2 text-[26px] leading-snug text-ink">
@@ -87,7 +90,7 @@ export default function StoryPage() {
             </p>
 
             <p>
-              Today, our Picual olive oil is estate grown and produced from the
+              Today, our Picual olive oil is estate-grown and produced from the
               very land we have worked so hard to restore. It is an oil we are
               genuinely proud to share.
             </p>
@@ -120,12 +123,12 @@ export default function StoryPage() {
           />
           <div>
             <h2 className="display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-olive">
-              Fenara Farms is about more than olive oil.
+              Fenara Farms is about more than Olive Oil.
             </h2>
             <div className="prose-body mt-6 space-y-5 text-[16px] leading-relaxed text-stone">
               <p>
-                It is about heritage and renewal. About respecting what was
-                entrusted to us and leaving it better than we found it.
+                It is about heritage and renewal. It is about respecting what
+                was entrusted to us and leaving it better than we found it.
               </p>
               <p>
                 Three thousand years after the first olive trees took root in
@@ -133,11 +136,11 @@ export default function StoryPage() {
                 its history, and carrying it forward.
               </p>
               <p className="display text-[22px] leading-snug text-ink">
-                From our grove to your table.
+                From Our Grove to Your Table.
               </p>
             </div>
             <ButtonLink href="/adopt" className="mt-9">
-              Adopt a tree
+              Adopt a Tree
             </ButtonLink>
           </div>
         </div>
