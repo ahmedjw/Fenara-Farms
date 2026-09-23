@@ -32,16 +32,17 @@ export default function AdoptPage() {
         <div className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
           <div>
             <h2 className="display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-olive">
-              Your adoption is annual.
+              Your Adoption is Annual.
             </h2>
             <p className="mt-6 max-w-[42ch] text-[16px] leading-relaxed text-stone">
               The grove produces once a year, so each adoption covers one year
               and its harvest. It renews automatically: Stripe charges your card
               for the next year on your renewal date, and your tree stays
-              registered in your name. You choose whether to renew, and renewal
-              can be switched off: write to us at {site.email} and we will sort
-              it. Your tree remains part of the Fenara Farms grove either way,
-              continuing to grow and be cared for as we restore the land.
+              registered in your name. You choose whether to renew, and you can
+              switch off renewal at any time: write to us at {site.email}, and
+              we’ll take care of the rest. Your tree remains part of the Fenara
+              Farms grove either way, continuing to grow and be cared for as we
+              restore the land.
             </p>
           </div>
 

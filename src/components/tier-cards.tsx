@@ -111,6 +111,13 @@ export function TierCards({ compact = false }: { compact?: boolean }) {
                 tier.featured ? "text-olive-soft" : "text-stone"
               }`}
             >
+              Plus {formatPrice(tier.shipping)} shipping, flat rate
+            </p>
+            <p
+              className={`mt-1 text-[12px] ${
+                tier.featured ? "text-olive-soft" : "text-stone"
+              }`}
+            >
               Renews yearly until you cancel
             </p>
           </div>

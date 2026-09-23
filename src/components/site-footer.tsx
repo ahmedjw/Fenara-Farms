@@ -5,24 +5,24 @@ const columns = [
   {
     heading: "The estate",
     links: [
-      { href: "/story", label: "Our story" },
-      { href: "/grove", label: "The grove" },
-      { href: "/oil", label: "The oil" },
+      { href: "/story", label: "Our Story" },
+      { href: "/grove", label: "The Grove" },
+      { href: "/oil", label: "The Oil" },
       { href: "/contact", label: "Contact" },
     ],
   },
   {
     heading: "Adoption",
     links: [
-      { href: "/adopt", label: "Adopt a tree" },
-      { href: "/adopt#included", label: "What is included" },
+      { href: "/adopt", label: "Adopt a Tree" },
+      { href: "/adopt#included", label: "What is Included" },
       { href: "/faq", label: "FAQ" },
     ],
   },
   {
     heading: "Legal",
     links: [
-      { href: "/policies/privacy-policy", label: "Privacy policy" },
+      { href: "/policies/privacy-policy", label: "Privacy Policy" },
       { href: "/policies/terms-of-service", label: "Terms of Service" },
       { href: "/policies/shipping", label: "Shipping & Returns" },
     ],
@@ -69,7 +69,7 @@ export function SiteFooter() {
 
         <div className="rule mt-14 flex flex-col gap-3 pt-6 text-[13px] text-stone sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} {site.name}. {site.estate}.</p>
-          <p>Estate grown, cold extracted, regeneratively farmed.</p>
+          <p>Estate Grown, Cold-Extracted, Regeneratively Farmed.</p>
         </div>
       </div>
     </footer>

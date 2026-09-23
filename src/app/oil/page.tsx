@@ -3,9 +3,9 @@ import { Photo } from "@/components/photo";
 import { ButtonLink, Section } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "The oil",
+  title: "The Oil",
   description:
-    "Single origin Picual extra virgin olive oil, cold extracted within hours of harvest and bottled in small batches on our Andalusian estate.",
+    "Single origin Picual extra virgin olive oil, cold-extracted within hours of harvest and bottled in small batches on our Andalusian estate.",
 };
 
 /** Tasting notes and specs. Real claims only, nothing invented for effect. */
@@ -35,12 +35,12 @@ export default function OilPage() {
         <div className="grid items-end gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
           <div>
             <h1 className="display text-[clamp(2.5rem,6vw,4.25rem)] leading-[1.04] text-olive">
-              One variety. One estate. One harvest.
+              One Variety. One Estate. One Harvest.
             </h1>
             <p className="mt-6 max-w-[50ch] text-[17px] leading-relaxed text-stone">
               Picual, grown and pressed in Andalusia. Picked at its peak and
-              cold extracted within hours, because everything good in olive oil
-              starts leaving the moment the fruit comes off the tree.
+              cold-extracted within hours, because everything good in olive oil
+              starts to leave the moment the fruit comes off the tree.
             </p>
           </div>
           <Photo
@@ -55,7 +55,7 @@ export default function OilPage() {
 
       <Section className="border-t border-line bg-paper-raised">
         <h2 className="display max-w-[16ch] text-[clamp(1.9rem,4vw,2.75rem)] text-olive">
-          What it tastes like.
+          What It Tastes Like.
         </h2>
         <div className="mt-10 grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2">
           {character.map((c) => (
@@ -82,13 +82,13 @@ export default function OilPage() {
           />
           <div>
             <h2 className="display text-[clamp(1.9rem,4vw,2.75rem)] leading-tight text-olive">
-              Harvested once a year.
+              Harvested Once a Year.
             </h2>
             <div className="prose-body mt-6 space-y-5 text-[16px] leading-relaxed text-stone">
               <p>
                 When the olives are ready, the grove is harvested at the peak of
-                the season. The fruit is carefully selected and cold extracted
-                shortly after picking to preserve the character, freshness and
+                the season. The fruit is carefully selected and cold-extracted
+                shortly after picking to preserve the character, freshness, and
                 natural qualities of the olive.
               </p>
               <p>
@@ -98,7 +98,7 @@ export default function OilPage() {
               </p>
               <p>
                 This is not oil sitting on a shelf waiting for a label. It is
-                the harvest from a living grove, cared for throughout the year.
+                the harvest of a living grove, cared for throughout the year.
               </p>
             </div>
 
@@ -129,12 +129,13 @@ export default function OilPage() {
             The only way to get it is to adopt a tree.
           </h2>
           <p className="mt-6 text-[16px] leading-relaxed text-olive-soft">
-            We do not sell into shops. The grove produces once a year, and the
-            harvest goes to the people who adopted the trees it came from.
+            We do not sell through shops. The grove produces once a year, and
+            the harvest goes directly to the people who adopted the trees it
+            came from.
           </p>
           <div className="mt-9 flex justify-center">
             <ButtonLink href="/adopt" variant="light">
-              Adopt a tree
+              Adopt a Tree
             </ButtonLink>
           </div>
         </div>

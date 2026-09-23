@@ -1,6 +1,12 @@
-import { site } from "./site";
+import { formatPrice, site, tiers } from "./site";
 
 export type FaqItem = { q: string; a: string };
+
+/** "$35, $65 or $95", in tier order, so the shipping answer cannot drift. */
+const shippingRates = (() => {
+  const amounts = tiers.map((t) => formatPrice(t.shipping));
+  return `${amounts.slice(0, -1).join(", ")} or ${amounts[amounts.length - 1]}`;
+})();
 
 export const faq: FaqItem[] = [
   {
@@ -9,19 +15,19 @@ export const faq: FaqItem[] = [
   },
   {
     q: "How much oil do I receive, and when?",
-    a: "It depends on the tier you choose, starting at three 500ml bottles from a single tree. The grove is harvested once a year, in late October. Oil is cold extracted within hours of picking, left to settle naturally and filtered three times before bottling. Our first shipments leave Fenara in early November.",
+    a: "It depends on the tier you choose, starting at three 500ml bottles from a single tree. The grove is harvested once a year, in late October. The oil is cold-extracted within hours of picking, left to settle naturally and filtered three times before bottling. Our first shipments leave Fenara in early November.",
   },
   {
     q: "Why is the adoption annual?",
-    a: "Because the grove produces once a year. Each adoption covers one year and the harvest in it, and renews automatically so your tree stays registered in your name for the next harvest. Your tree stays part of the grove either way, and we keep caring for it.",
+    a: "Because the grove produces one harvest each year. Each adoption covers a single harvest and renews automatically, so your tree remains registered in your name for the following season. Either way, your tree remains part of the grove, and we continue to care for it year-round.",
   },
   {
     q: "What happens after the first year?",
-    a: `Your adoption covers one year. You can choose whether to renew, and renewal can be switched off. Just write to us at ${site.email} and we’ll sort it.`,
+    a: `Your adoption covers one year. You can choose whether to renew, and you can switch off renewal at any time. Just write to us at ${site.email}, and we\u2019ll take care of the rest.`,
   },
   {
     q: "What does regenerative farming actually mean here?",
-    a: "We stopped farming for maximum yield. We sow cover crops between the rows to put nutrients back into the soil, we leave habitat for pollinators, and we do not strip the ground bare. The soil holds water again and the grove is measurably healthier. It took years, not one season.",
+    a: "We stopped farming for maximum yield. We sow cover crops between the rows to return nutrients to the soil, create habitat for pollinators, and keep the ground covered. The soil holds water again, and the grove is measurably healthier. It took years, not one season.",
   },
   {
     q: "Can I visit my tree?",
@@ -29,18 +35,18 @@ export const faq: FaqItem[] = [
   },
   {
     q: "Can I adopt a tree as a gift?",
-    a: "Yes, and it is one of the more common reasons people adopt. At checkout you can mark the adoption as a gift, add the recipient's details, and write a short message that goes on the certificate. Nothing arrives with a price on it.",
+    a: "Yes, and it is one of the most common reasons people adopt. At checkout, you can mark the adoption as a gift, add the recipient's details, and write a short message to be included on the certificate. Nothing arrives with a price on it.",
   },
   {
     q: "What makes this oil different from oil in a shop?",
-    a: "Single origin from one estate, one variety, one harvest, cold extracted and bottled in small batches. Supermarket oil is usually blended across regions and seasons and can sit for a long time before it reaches you. You will know the block your oil came from and the year it was picked.",
+    a: "It comes from a single estate, one variety, and one harvest, and is cold-extracted and bottled in small batches. Oil sold in supermarkets is often blended across regions and seasons and may sit for a long time before reaching you. You will know the block your oil came from and the year it was picked.",
   },
   {
     q: "What happens if my tree has a bad year?",
-    a: "Olive trees alternate. A heavy year is often followed by a light one, and weather does what it wants. If your tree underproduces we make up your allocation from the same block, and we tell you plainly that we have done so. You always receive the quantity you paid for.",
+    a: "Olive trees naturally alternate between heavier and lighter harvests. A heavy year is often followed by a light one, and weather does what it wants. If your tree underproduces, we make up the difference from the same block and tell you plainly that we have done so. You always receive the quantity you paid for.",
   },
   {
     q: "Where do you ship, and what does it cost?",
-    a: "We ship across the EU, the UK and the United States. If you are somewhere else, write to us before purchasing and we will tell you whether we can ship to you. Shipping is calculated at checkout based on your address and the weight of your allocation. We package every bottle carefully, and we replace anything that arrives damaged.",
+    a: `We ship across the EU, the UK and the United States. If you are somewhere else, write to us before purchasing and we will tell you whether we can ship to you. Shipping is a flat rate set by the size of your adoption, ${shippingRates} a year, shown as its own line at checkout. We package every bottle carefully, and we replace anything that arrives damaged.`,
   },
 ];

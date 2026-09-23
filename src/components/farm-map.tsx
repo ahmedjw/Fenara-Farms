@@ -5,7 +5,9 @@ import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { MagnifyingGlass, Tree, X } from "@phosphor-icons/react";
 import {
   adoptableTrees,
+  buildings,
   getPlot,
+  openPlots,
   plotOf,
   plots,
   polygonPath,
@@ -178,8 +180,39 @@ export function FarmMap({
 
   const hovered = hoverId ? treeById.get(hoverId) : undefined;
 
+  const closedPlots = plots.filter((p) => !p.open);
+  const openTotal = openPlots.reduce(
+    (n, p) => n + (counts.get(p.id)?.available ?? 0),
+    0,
+  );
+
   return (
     <div>
+      {/* One plot is open this season. Say so before anything else, because
+          three of the four blocks on the map cannot be adopted at all. */}
+      <div className="mb-4 flex flex-col gap-2 rounded-[2px] border border-olive-mid/40 bg-olive/[0.07] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-ink">
+          {openPlots.map((p) => (
+            <span key={p.id} className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className="inline-block h-2.5 w-2.5 rounded-full ring-2 ring-olive/30"
+                style={{ background: p.color }}
+              />
+              <span className="font-medium">{p.name}</span>
+            </span>
+          ))}
+          <span>
+            {openPlots.length === 1 ? "is the only plot" : "are the only plots"}{" "}
+            open this season, with {openTotal}{" "}
+            {openTotal === 1 ? "tree" : "trees"} still free.
+          </span>
+        </p>
+        <p className="text-[13px] leading-snug text-stone">
+          {closedPlots.map((p) => p.name).join(", ")} open in later seasons.
+        </p>
+      </div>
+
       {/* Toolbar */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
@@ -194,10 +227,19 @@ export function FarmMap({
             >
               <span
                 aria-hidden
-                className="inline-block h-2.5 w-2.5 rounded-full"
+                className={`inline-block h-2.5 w-2.5 rounded-full ${
+                  p.open ? "" : "opacity-40"
+                }`}
                 style={{ background: p.color }}
               />
-              {p.name}
+              <span className={p.open || plotId === p.id ? "" : "text-stone-light"}>
+                {p.name}
+              </span>
+              {!p.open && (
+                <span className="font-mono text-[9px] uppercase tracking-[0.14em] opacity-70">
+                  later
+                </span>
+              )}
             </Chip>
           ))}
         </div>
@@ -266,15 +308,20 @@ export function FarmMap({
                 ridge · not planted
               </text>
 
+              {/* A closed plot is washed out and outlined in dashes, so the
+                  one plot you can actually adopt from reads first. */}
               {plots.map((p) => {
                 const active = !plotId || plotId === p.id;
                 return (
                   <path
                     key={p.id}
                     d={polygonPath(p.polygon)}
-                    fill={`${p.color}${active ? "55" : "22"}`}
-                    stroke={p.color}
-                    strokeWidth={plotId === p.id ? 3 / view.scale : 2}
+                    fill={`${p.color}${p.open ? (active ? "66" : "2a") : active ? "1f" : "12"}`}
+                    stroke={p.open ? p.color : `${p.color}88`}
+                    strokeDasharray={p.open ? undefined : 8 / view.scale}
+                    strokeWidth={
+                      plotId === p.id ? 3 / view.scale : p.open ? 2.75 : 1.5
+                    }
                     opacity={active ? 1 : 0.45}
                     className="cursor-pointer motion-safe:transition-[fill,opacity] motion-safe:duration-300"
                     onClick={(e) => {
@@ -287,6 +334,22 @@ export function FarmMap({
                   </path>
                 );
               })}
+
+              {/* Built since the aerial survey. The trees that stood here
+                  are gone from the data, not merely marked unavailable. */}
+              {buildings.map((b) => (
+                <path
+                  key={b.id}
+                  d={polygonPath(b.polygon)}
+                  fill="var(--color-ink)"
+                  fillOpacity={plotId && plotId !== b.plotId ? 0.12 : 0.62}
+                  stroke="var(--color-ink)"
+                  strokeWidth={1.5 / view.scale}
+                  className="motion-safe:transition-[fill-opacity] motion-safe:duration-300"
+                >
+                  <title>{b.name}</title>
+                </path>
+              ))}
 
               <ellipse
                 cx={pond.cx}
@@ -374,8 +437,25 @@ export function FarmMap({
                 <span className="block font-mono text-[clamp(10px,1.2vw,13px)] tracking-[0.06em] text-stone">
                   {p.open
                     ? `${count.available} of ${count.total} available`
-                    : `${count.total} trees`}
+                    : `${count.total} trees · opens later`}
                 </span>
+              </span>
+            );
+          })}
+
+          {buildings.map((b) => {
+            const centre = b.polygon.reduce(
+              (acc, [x, y]) => [acc[0] + x / b.polygon.length, acc[1] + y / b.polygon.length],
+              [0, 0],
+            );
+            return (
+              <span
+                key={b.id}
+                aria-hidden
+                style={{ ...at(centre[0], centre[1]), opacity: plotId === b.plotId ? 1 : 0 }}
+                className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 font-mono text-[11px] uppercase tracking-[0.14em] text-paper transition-opacity duration-300"
+              >
+                {b.name}
               </span>
             );
           })}
@@ -400,6 +480,7 @@ export function FarmMap({
             <Key className="border border-olive bg-paper" label="Adopted" />
             {onSelect && <Key className="bg-brick" label="Your pick" />}
             <Key className="bg-stone-light" label="Opens later" />
+            <Key className="bg-ink/60" label="Barn" />
           </div>
         </div>
 
@@ -424,18 +505,41 @@ export function FarmMap({
                     <button
                       type="button"
                       onClick={() => setPlotId(p.id)}
-                      className="grid w-full grid-cols-[14px_1fr_auto] items-center gap-4 rounded-[2px] border border-line bg-paper-raised p-4 text-left transition-colors hover:border-ink"
+                      className={`grid w-full grid-cols-[14px_1fr_auto] items-center gap-4 rounded-[2px] border p-4 text-left transition-colors hover:border-ink ${
+                        p.open
+                          ? "border-olive-mid/50 bg-paper-raised"
+                          : "border-line bg-paper-raised/60"
+                      }`}
                     >
                       <span
                         aria-hidden
-                        className="h-3.5 w-3.5 rounded-[2px]"
+                        className={`h-3.5 w-3.5 rounded-[2px] ${p.open ? "" : "opacity-40"}`}
                         style={{ background: p.color }}
                       />
                       <span>
-                        <span className="display block text-[19px] leading-tight text-ink">
-                          {p.name}
+                        <span className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`display text-[19px] leading-tight ${
+                              p.open ? "text-ink" : "text-stone"
+                            }`}
+                          >
+                            {p.name}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] ${
+                              p.open
+                                ? "bg-olive text-paper"
+                                : "border border-line-strong text-stone"
+                            }`}
+                          >
+                            {p.open ? "Open now" : "Opens later"}
+                          </span>
                         </span>
-                        <span className="block text-[13px] leading-snug text-stone">
+                        <span
+                          className={`mt-0.5 block text-[13px] leading-snug ${
+                            p.open ? "text-stone" : "text-stone-light"
+                          }`}
+                        >
                           {p.description}
                         </span>
                       </span>
@@ -496,9 +600,18 @@ function PlotCard({ plot, count }: { plot: FarmPlot; count: { total: number; ava
       className="rounded-[2px] border border-line bg-paper-raised p-6"
       style={{ borderTop: `5px solid ${plot.color}` }}
     >
-      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
-        Plot
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-stone">
+          Plot
+        </p>
+        <span
+          className={`rounded-full px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.14em] ${
+            plot.open ? "bg-olive text-paper" : "border border-line-strong text-stone"
+          }`}
+        >
+          {plot.open ? "Open now" : "Opens later"}
+        </span>
+      </div>
       <h3 className="display mt-1 text-[32px] leading-none text-olive">
         {plot.name}
       </h3>

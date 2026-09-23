@@ -47,9 +47,19 @@ export async function billingOfSession(
   return billingOf(subscription);
 }
 
+/**
+ * Whether checkout can run.
+ *
+ * Only the secret key matters. Checkout happens entirely on the server and
+ * the browser is sent to the url Stripe returns, so the publishable key is
+ * never needed and is not checked for.
+ *
+ * It used to be, and that broke every host that builds separately from where
+ * its secrets live. Next.js replaces `process.env.NEXT_PUBLIC_*` with the
+ * value present at build time, so a publishable key added to a dashboard
+ * afterwards stayed `undefined` at runtime and the site insisted payments
+ * were not connected. Read only plain server variables here.
+ */
 export function stripeConfigured(): boolean {
-  return Boolean(
-    process.env.STRIPE_SECRET_KEY &&
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-  );
+  return Boolean(process.env.STRIPE_SECRET_KEY);
 }

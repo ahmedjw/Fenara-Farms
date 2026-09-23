@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, Warning } from "@phosphor-icons/react";
 import { Certificate } from "./certificate";
 import { Button } from "./ui";
-import { formatDate, formatPrice, getTier, site } from "@/lib/site";
+import { formatDate, formatPrice, getTier, site, tierTotal } from "@/lib/site";
 import { describePlot } from "@/lib/plots";
 import type { Adoption } from "@/lib/store";
 
@@ -131,7 +131,7 @@ function Renewal({ adoption, price }: { adoption: Adoption; price: string | null
     : adoption.cancelAtPeriodEnd && adoption.renewsAt
       ? `Renewal cancelled. Your adoption continues until ${formatDate(adoption.renewsAt)} and then ends.`
       : adoption.renewsAt
-        ? `Renews on ${formatDate(adoption.renewsAt)}. Stripe charges ${price ?? "your plan price"} to the card you adopted with unless you cancel before then.`
+        ? `Renews on ${formatDate(adoption.renewsAt)}. Stripe charges ${price ?? "your plan price"}, adoption and shipping together, to the card you adopted with unless you cancel before then.`
         : "Renews every year. Stripe charges your plan price to the card you adopted with unless you cancel before your renewal date.";
 
   return (
@@ -211,7 +211,7 @@ function GroveDashboard({
         </p>
       </div>
 
-      <Renewal adoption={adoption} price={tier ? formatPrice(tier.price) : null} />
+      <Renewal adoption={adoption} price={tier ? formatPrice(tierTotal(tier)) : null} />
 
       {/* Your trees */}
       <section className="mt-12">
