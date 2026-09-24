@@ -83,9 +83,38 @@ export class TreesTakenError extends Error {
   }
 }
 
-function heldIds(db: Db): Set<string> {
+/**
+ * How long a checkout session may be paid for.
+ *
+ * Stripe’s own minimum. The shorter it is, the sooner an abandoned checkout
+ * gives its trees back.
+ */
+export const CHECKOUT_WINDOW_MS = 30 * 60 * 1000;
+
+/**
+ * How long an unpaid adoption holds its trees.
+ *
+ * Deliberately longer than the checkout window, so a session can never still
+ * be payable after its hold has lapsed and sell the same tree twice.
+ *
+ * Without a limit, a customer who closed the tab held their trees until a
+ * checkout.session.expired webhook released them — and forever if the
+ * deployment had no webhook configured. The webhook is still the tidy path;
+ * this is what happens when it does not arrive.
+ */
+export const PENDING_HOLD_MS = CHECKOUT_WINDOW_MS + 5 * 60 * 1000;
+
+function heldIds(db: Db, now = Date.now()): Set<string> {
   return new Set(
-    db.adoptions.filter((a) => a.status !== "cancelled").flatMap((a) => a.trees),
+    db.adoptions
+      .filter((a) => {
+        if (a.status === "cancelled") return false;
+        if (a.status !== "pending") return true;
+        // An unparseable date gives NaN, and NaN < x is false, so a damaged
+        // record keeps its hold rather than quietly freeing a paid tree.
+        return !(Date.parse(a.createdAt) < now - PENDING_HOLD_MS);
+      })
+      .flatMap((a) => a.trees),
   );
 }
 

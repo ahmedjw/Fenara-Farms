@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { currency, getTier, shippingLabel, site } from "@/lib/site";
 import { getCell } from "@/lib/land";
-import { createAdoption, takenTreeIds, TreesTakenError } from "@/lib/store";
+import {
+  CHECKOUT_WINDOW_MS,
+  createAdoption,
+  takenTreeIds,
+  TreesTakenError,
+} from "@/lib/store";
 
 export const runtime = "nodejs";
 
@@ -157,6 +162,9 @@ export async function POST(request: Request) {
         ],
       },
       metadata,
+      // The trees are held from here until this session lapses, so give it the
+      // shortest life Stripe allows rather than the default 24 hours.
+      expires_at: Math.floor((Date.now() + CHECKOUT_WINDOW_MS) / 1000),
       success_url: `${baseUrl}/adopt/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/adopt/${tier.id}`,
     });
