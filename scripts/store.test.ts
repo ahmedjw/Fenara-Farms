@@ -21,6 +21,7 @@ import {
   recordRenewal,
   syncSubscription,
   takenTreeIds,
+  treeHolds,
   TreesTakenError,
 } from "../src/lib/store";
 
@@ -172,6 +173,18 @@ async function main() {
 
   const untouched = await activateAdoption("cs_one", {});
   eq(untouched?.stripeSubscriptionId, "sub_1", "an empty update keeps what was there");
+
+  console.log("\ntelling paid from merely held");
+  const split = await treeHolds();
+  eq(split.adopted, ["A-R46-C51"], "a paid tree is adopted");
+  ok(
+    split.reserved.includes("A-R46-C52") && split.reserved.includes("A-R47-C50"),
+    "an unfinished checkout's trees are on hold, not adopted",
+  );
+  ok(
+    !split.reserved.includes("A-R46-C51"),
+    "and a tree is never both at once",
+  );
 
   console.log("\nan unpaid checkout that lapses");
   await pg.query(

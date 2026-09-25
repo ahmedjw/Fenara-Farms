@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "dev:db": "tsx scripts/dev-db.ts",
+    "prebuild": "node -e \"require('fs').rmSync(process.env.NEXT_DIST_DIR||'.next',{recursive:true,force:true})\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "tsx scripts/store.test.ts",
+    "test:e2e": "tsx scripts/map.e2e.ts",
     "recover": "tsx scripts/recover-from-stripe.ts"
   },
   "dependencies": {
@@ -30,6 +32,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "playwright": "^1.63.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.23.15",
     "typescript": "^5.7.2"

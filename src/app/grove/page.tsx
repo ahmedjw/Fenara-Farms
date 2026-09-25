@@ -4,7 +4,7 @@ import { FarmMap } from "@/components/farm-map";
 import { ButtonLink, Section } from "@/components/ui";
 import { adoptableTrees, openPlotNames, plots } from "@/lib/farm";
 import { groveFacts } from "@/lib/site";
-import { takenTreeIdsForDisplay } from "@/lib/store";
+import { treeHoldsForDisplay } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "The Grove",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function GrovePage() {
-  const taken = await takenTreeIdsForDisplay();
+  const holds = await treeHoldsForDisplay();
 
   return (
     <>
@@ -49,7 +49,10 @@ export default async function GrovePage() {
       </Section>
 
       <Section top={false}>
-        <FarmMap takenSpotIds={taken} />
+        <FarmMap
+          adoptedSpotIds={holds.adopted}
+          reservedSpotIds={holds.reserved}
+        />
       </Section>
 
       <Section className="border-t border-line bg-paper-raised">
