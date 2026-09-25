@@ -4,7 +4,7 @@ import { FarmMap } from "@/components/farm-map";
 import { ButtonLink, Section } from "@/components/ui";
 import { adoptableTrees, openPlotNames, plots } from "@/lib/farm";
 import { groveFacts } from "@/lib/site";
-import { takenTreeIds } from "@/lib/store";
+import { takenTreeIdsForDisplay } from "@/lib/store";
 
 export const metadata: Metadata = {
   title: "The Grove",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function GrovePage() {
-  const taken = await takenTreeIds();
+  const taken = await takenTreeIdsForDisplay();
 
   return (
     <>

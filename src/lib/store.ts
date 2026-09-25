@@ -1,19 +1,18 @@
 /**
  * Adoption store.
  *
- * Backed by a JSON file on disk so the full flow works end to end without
- * standing up a database. Every read and write goes through the functions
- * below, so moving to Postgres, Supabase or Mongo later means rewriting this
- * one file and nothing else.
+ * Backed by Postgres. Every read and write goes through the functions below,
+ * so the rest of the site never writes a query and swapping the database
+ * again means rewriting this one file.
  *
- * Note: file storage does not survive a redeploy on serverless hosts such as
- * Vercel. Swap in a real database before taking live payments.
+ * Two tables, for two different questions. `adoptions` is the record of what
+ * someone bought, and it keeps its trees listed even after it is cancelled.
+ * `adoption_holds` answers only "is this tree spoken for right now", and its
+ * primary key on tree_id is what makes selling the same tree twice impossible
+ * rather than merely unlikely. See db.ts for the schema.
  */
 
-import { promises as fs } from "fs";
-import path from "path";
-
-const DB_PATH = path.join(process.cwd(), "data", "adoptions.json");
+import { db, type Row, type Sql } from "./db";
 
 export type AdoptionStatus = "pending" | "active" | "cancelled";
 
@@ -48,45 +47,23 @@ export type Adoption = {
   giftMessage?: string;
 };
 
-type Db = { adoptions: Adoption[] };
-
-async function read(): Promise<Db> {
-  try {
-    const raw = await fs.readFile(DB_PATH, "utf8");
-    return JSON.parse(raw) as Db;
-  } catch {
-    return { adoptions: [] };
-  }
-}
-
-async function write(db: Db): Promise<void> {
-  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-  await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2), "utf8");
-}
-
-/**
- * Runs read-modify-write steps one at a time, so two requests cannot both read
- * the file, both see a tree as free, and both write. This only holds within
- * one server process, which is another reason to move to a database.
- */
-let queue: Promise<unknown> = Promise.resolve();
-function exclusive<T>(task: () => Promise<T>): Promise<T> {
-  const run = queue.then(task, task);
-  queue = run.catch(() => undefined);
-  return run;
-}
+export type Billing = Pick<
+  Adoption,
+  "stripeCustomerId" | "stripeSubscriptionId" | "renewsAt" | "cancelAtPeriodEnd"
+>;
 
 /** Thrown when an adoption asks for a tree that another adoption already holds. */
 export class TreesTakenError extends Error {
   constructor(readonly ids: string[]) {
     super(`Already adopted: ${ids.join(", ")}`);
+    this.name = "TreesTakenError";
   }
 }
 
 /**
  * How long a checkout session may be paid for.
  *
- * Stripe’s own minimum. The shorter it is, the sooner an abandoned checkout
+ * Stripe's own minimum. The shorter it is, the sooner an abandoned checkout
  * gives its trees back.
  */
 export const CHECKOUT_WINDOW_MS = 30 * 60 * 1000;
@@ -104,156 +81,309 @@ export const CHECKOUT_WINDOW_MS = 30 * 60 * 1000;
  */
 export const PENDING_HOLD_MS = CHECKOUT_WINDOW_MS + 5 * 60 * 1000;
 
-function heldIds(db: Db, now = Date.now()): Set<string> {
-  return new Set(
-    db.adoptions
-      .filter((a) => {
-        if (a.status === "cancelled") return false;
-        if (a.status !== "pending") return true;
-        // An unparseable date gives NaN, and NaN < x is false, so a damaged
-        // record keeps its hold rather than quietly freeing a paid tree.
-        return !(Date.parse(a.createdAt) < now - PENDING_HOLD_MS);
-      })
-      .flatMap((a) => a.trees),
-  );
-}
-
 export const SEASON = 2026;
 
-export async function nextAdoptionNumber(): Promise<string> {
-  const db = await read();
-  const seq = db.adoptions.length + 1;
-  return `FEN-${SEASON}-${String(seq).padStart(4, "0")}`;
+const HOLD_SECONDS = PENDING_HOLD_MS / 1000;
+
+/** Postgres error code for a unique constraint violation. */
+const UNIQUE_VIOLATION = "23505";
+
+/** Everything an Adoption is built from. created_at is set by the default. */
+const WRITTEN_COLUMNS = `
+  number, tier_id, trees, names, customer_name, email, status, season,
+  stripe_session_id, stripe_customer_id, stripe_subscription_id,
+  renews_at, cancel_at_period_end, renewal_invoices, gift_from, gift_message
+`;
+const ADOPTION_COLUMNS = `${WRITTEN_COLUMNS}, created_at`;
+
+function text(value: unknown): string | undefined {
+  return typeof value === "string" && value.length ? value : undefined;
+}
+
+function iso(value: unknown): string | undefined {
+  if (value instanceof Date) return value.toISOString();
+  return typeof value === "string" ? new Date(value).toISOString() : undefined;
+}
+
+function toAdoption(row: Row): Adoption {
+  const adoption: Adoption = {
+    number: String(row.number),
+    tierId: String(row.tier_id),
+    trees: (row.trees as string[] | null) ?? [],
+    names: (row.names as Record<string, string> | null) ?? {},
+    customerName: String(row.customer_name),
+    email: String(row.email),
+    status: row.status as AdoptionStatus,
+    season: Number(row.season),
+    createdAt: iso(row.created_at) ?? new Date(0).toISOString(),
+  };
+  // Left off entirely when absent, so the shape matches what the pages expect
+  // of an optional field rather than carrying nulls around.
+  const stripeSessionId = text(row.stripe_session_id);
+  if (stripeSessionId) adoption.stripeSessionId = stripeSessionId;
+  const stripeCustomerId = text(row.stripe_customer_id);
+  if (stripeCustomerId) adoption.stripeCustomerId = stripeCustomerId;
+  const stripeSubscriptionId = text(row.stripe_subscription_id);
+  if (stripeSubscriptionId) adoption.stripeSubscriptionId = stripeSubscriptionId;
+  const renewsAt = iso(row.renews_at);
+  if (renewsAt) adoption.renewsAt = renewsAt;
+  if (typeof row.cancel_at_period_end === "boolean") {
+    adoption.cancelAtPeriodEnd = row.cancel_at_period_end;
+  }
+  const invoices = row.renewal_invoices as string[] | null;
+  if (invoices?.length) adoption.renewalInvoices = invoices;
+  const giftFrom = text(row.gift_from);
+  if (giftFrom) adoption.giftFrom = giftFrom;
+  const giftMessage = text(row.gift_message);
+  if (giftMessage) adoption.giftMessage = giftMessage;
+  return adoption;
 }
 
 /**
- * Records an adoption, re-checking inside the lock that none of its trees has
- * been taken since the caller validated them. Throws TreesTakenError if so.
+ * Hands back the trees of unpaid checkouts that have run out of time.
+ *
+ * Runs inside the reservation transaction, so the trees a lapsed hold was
+ * sitting on become available to the customer asking for them right now.
+ */
+async function releaseLapsedHolds(sql: Sql): Promise<void> {
+  await sql.query(
+    `delete from adoption_holds h
+       using adoptions a
+      where a.number = h.adoption_number
+        and a.status = 'pending'
+        and a.created_at <= now() - make_interval(secs => $1)`,
+    [HOLD_SECONDS],
+  );
+  await sql.query(
+    `update adoptions
+        set status = 'cancelled'
+      where status = 'pending'
+        and created_at <= now() - make_interval(secs => $1)`,
+    [HOLD_SECONDS],
+  );
+}
+
+/**
+ * Records an adoption and takes its trees off the market in one transaction.
+ * Throws TreesTakenError if another adoption holds any of them.
  */
 export async function createAdoption(
   input: Omit<Adoption, "number" | "createdAt" | "season" | "status"> & {
     status?: AdoptionStatus;
   },
 ): Promise<Adoption> {
-  return exclusive(async () => {
-    const db = await read();
-    const held = heldIds(db);
-    const clash = input.trees.filter((id) => held.has(id));
-    if (clash.length) throw new TreesTakenError(clash);
+  const driver = await db();
+  return driver.transaction(async (sql) => {
+    await releaseLapsedHolds(sql);
 
-    const adoption: Adoption = {
-      ...input,
-      number: `FEN-${SEASON}-${String(db.adoptions.length + 1).padStart(4, "0")}`,
-      status: input.status ?? "pending",
-      season: SEASON,
-      createdAt: new Date().toISOString(),
-    };
-    db.adoptions.push(adoption);
-    await write(db);
+    const clash = await sql.query<{ tree_id: string }>(
+      `select tree_id from adoption_holds where tree_id = any($1::text[])`,
+      [input.trees],
+    );
+    if (clash.rows.length) {
+      throw new TreesTakenError(clash.rows.map((r) => r.tree_id));
+    }
+
+    const created = await sql.query(
+      `insert into adoptions (${WRITTEN_COLUMNS})
+       values (
+         'FEN-' || $1::int || '-' || lpad(nextval('adoption_number_seq')::text, 4, '0'),
+         $2, $3::text[], $4::jsonb, $5, $6, $7, $1::int,
+         $8, $9, $10, $11::timestamptz, $12::boolean,
+         coalesce($13::text[], '{}'::text[]), $14, $15
+       )
+       returning ${ADOPTION_COLUMNS}`,
+      [
+        SEASON,
+        input.tierId,
+        input.trees,
+        JSON.stringify(input.names ?? {}),
+        input.customerName,
+        input.email,
+        input.status ?? "pending",
+        input.stripeSessionId ?? null,
+        input.stripeCustomerId ?? null,
+        input.stripeSubscriptionId ?? null,
+        input.renewsAt ?? null,
+        input.cancelAtPeriodEnd ?? null,
+        input.renewalInvoices ?? null,
+        input.giftFrom ?? null,
+        input.giftMessage ?? null,
+      ],
+    );
+    const adoption = toAdoption(created.rows[0]);
+
+    try {
+      await sql.query(
+        `insert into adoption_holds (tree_id, adoption_number)
+         select unnest($1::text[]), $2`,
+        [input.trees, adoption.number],
+      );
+    } catch (e) {
+      // Another checkout won the race between the check above and here. The
+      // primary key on tree_id is what caught it; say which trees went.
+      if ((e as { code?: string }).code === UNIQUE_VIOLATION) {
+        throw new TreesTakenError(input.trees);
+      }
+      throw e;
+    }
+
     return adoption;
   });
 }
 
 export async function getAdoption(number: string): Promise<Adoption | null> {
-  const db = await read();
-  return (
-    db.adoptions.find(
-      (a) => a.number.toUpperCase() === number.trim().toUpperCase(),
-    ) ?? null
+  const driver = await db();
+  const { rows } = await driver.query(
+    `select ${ADOPTION_COLUMNS} from adoptions where upper(number) = upper($1)`,
+    [number.trim()],
   );
+  return rows[0] ? toAdoption(rows[0]) : null;
 }
 
 export async function getAdoptionBySession(
   sessionId: string,
 ): Promise<Adoption | null> {
-  const db = await read();
-  return db.adoptions.find((a) => a.stripeSessionId === sessionId) ?? null;
+  const driver = await db();
+  const { rows } = await driver.query(
+    `select ${ADOPTION_COLUMNS} from adoptions where stripe_session_id = $1`,
+    [sessionId],
+  );
+  return rows[0] ? toAdoption(rows[0]) : null;
 }
-
-export type Billing = Pick<
-  Adoption,
-  "stripeCustomerId" | "stripeSubscriptionId" | "renewsAt" | "cancelAtPeriodEnd"
->;
 
 /** Marks a paid checkout's adoption active and records its subscription. */
 export async function activateAdoption(
   sessionId: string,
   billing: Billing = {},
 ): Promise<Adoption | null> {
-  return exclusive(async () => {
-    const db = await read();
-    const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
-    if (!adoption) return null;
-    adoption.status = "active";
-    Object.assign(adoption, withoutUndefined(billing));
-    await write(db);
-    return adoption;
-  });
+  const driver = await db();
+  const { rows } = await driver.query(
+    `update adoptions
+        set status = 'active',
+            stripe_customer_id = coalesce($2, stripe_customer_id),
+            stripe_subscription_id = coalesce($3, stripe_subscription_id),
+            renews_at = coalesce($4::timestamptz, renews_at),
+            cancel_at_period_end = coalesce($5::boolean, cancel_at_period_end)
+      where stripe_session_id = $1
+      returning ${ADOPTION_COLUMNS}`,
+    [
+      sessionId,
+      billing.stripeCustomerId ?? null,
+      billing.stripeSubscriptionId ?? null,
+      billing.renewsAt ?? null,
+      billing.cancelAtPeriodEnd ?? null,
+    ],
+  );
+  return rows[0] ? toAdoption(rows[0]) : null;
 }
 
 /**
- * A checkout that expired unpaid. Its adoption was holding spots; releasing
+ * A checkout that expired unpaid. Its adoption was holding trees; releasing
  * them lets someone else adopt. An adoption that was paid is left alone.
  */
 export async function expireAdoption(sessionId: string): Promise<void> {
-  await exclusive(async () => {
-    const db = await read();
-    const adoption = db.adoptions.find((a) => a.stripeSessionId === sessionId);
-    if (!adoption || adoption.status !== "pending") return;
-    adoption.status = "cancelled";
-    await write(db);
+  const driver = await db();
+  await driver.transaction(async (sql) => {
+    const { rows } = await sql.query<{ number: string }>(
+      `update adoptions set status = 'cancelled'
+        where stripe_session_id = $1 and status = 'pending'
+        returning number`,
+      [sessionId],
+    );
+    if (!rows[0]) return;
+    await sql.query(`delete from adoption_holds where adoption_number = $1`, [
+      rows[0].number,
+    ]);
   });
 }
 
 /**
  * Keeps an adoption in step with its subscription: the next renewal date,
  * whether the customer has cancelled, and the end of the adoption when the
- * subscription itself ends, which also returns its spots to the map.
+ * subscription itself ends, which also returns its trees to the map.
  */
 export async function syncSubscription(
   subscriptionId: string,
   update: Billing & { ended?: boolean },
 ): Promise<void> {
-  await exclusive(async () => {
-    const db = await read();
-    const adoption = db.adoptions.find(
-      (a) => a.stripeSubscriptionId === subscriptionId,
+  const driver = await db();
+  await driver.transaction(async (sql) => {
+    const { rows } = await sql.query<{ number: string }>(
+      `update adoptions
+          set stripe_customer_id = coalesce($2, stripe_customer_id),
+              renews_at = coalesce($3::timestamptz, renews_at),
+              cancel_at_period_end = coalesce($4::boolean, cancel_at_period_end),
+              status = case when $5::boolean then 'cancelled' else status end
+        where stripe_subscription_id = $1
+        returning number`,
+      [
+        subscriptionId,
+        update.stripeCustomerId ?? null,
+        update.renewsAt ?? null,
+        update.cancelAtPeriodEnd ?? null,
+        update.ended ?? false,
+      ],
     );
-    if (!adoption) return;
-    const { ended, ...billing } = update;
-    Object.assign(adoption, withoutUndefined(billing));
-    if (ended) adoption.status = "cancelled";
-    await write(db);
+    if (!rows[0] || !update.ended) return;
+    await sql.query(`delete from adoption_holds where adoption_number = $1`, [
+      rows[0].number,
+    ]);
   });
 }
 
-/** A yearly renewal was paid: the adoption moves on to the next season. */
+/**
+ * A yearly renewal was paid: the adoption moves on to the next season.
+ *
+ * The invoice guard is in the statement itself, so a webhook Stripe retries
+ * cannot advance the season twice however many instances receive it.
+ */
 export async function recordRenewal(
   subscriptionId: string,
   invoiceId: string,
 ): Promise<void> {
-  await exclusive(async () => {
-    const db = await read();
-    const adoption = db.adoptions.find(
-      (a) => a.stripeSubscriptionId === subscriptionId,
-    );
-    if (!adoption || adoption.renewalInvoices?.includes(invoiceId)) return;
-    adoption.renewalInvoices = [...(adoption.renewalInvoices ?? []), invoiceId];
-    adoption.season += 1;
-    adoption.status = "active";
-    await write(db);
-  });
-}
-
-function withoutUndefined<T extends object>(value: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, v]) => v !== undefined),
-  ) as Partial<T>;
+  const driver = await db();
+  await driver.query(
+    `update adoptions
+        set renewal_invoices = renewal_invoices || $2::text,
+            season = season + 1,
+            status = 'active'
+      where stripe_subscription_id = $1
+        and not (renewal_invoices @> array[$2]::text[])`,
+    [subscriptionId, invoiceId],
+  );
 }
 
 /** Tree and spot ids already spoken for, so the maps can grey them out. */
 export async function takenTreeIds(): Promise<string[]> {
-  return [...heldIds(await read())];
+  const driver = await db();
+  const { rows } = await driver.query<{ tree_id: string }>(
+    `select h.tree_id
+       from adoption_holds h
+       join adoptions a on a.number = h.adoption_number
+      where a.status <> 'cancelled'
+        and (a.status <> 'pending'
+             or a.created_at > now() - make_interval(secs => $1))`,
+    [HOLD_SECONDS],
+  );
+  return rows.map((r) => r.tree_id);
+}
+
+/**
+ * Trees spoken for, or an empty list when the store cannot be reached.
+ *
+ * For the pages that only draw the map. An outage should not take the whole
+ * site down with it, and nothing is sold on the strength of this list:
+ * createAdoption re-checks every tree inside its own transaction, so the
+ * worst case is a tree that looks free until someone tries to buy it.
+ */
+export async function takenTreeIdsForDisplay(): Promise<string[]> {
+  try {
+    return await takenTreeIds();
+  } catch (e) {
+    console.error("Could not read adoption holds:", e);
+    return [];
+  }
 }
 
 /** Lookup for the account page: adoption number plus matching email. */
@@ -261,8 +391,11 @@ export async function findForCustomer(
   number: string,
   email: string,
 ): Promise<Adoption | null> {
-  const adoption = await getAdoption(number);
-  if (!adoption) return null;
-  if (adoption.email.toLowerCase() !== email.trim().toLowerCase()) return null;
-  return adoption;
+  const driver = await db();
+  const { rows } = await driver.query(
+    `select ${ADOPTION_COLUMNS} from adoptions
+      where upper(number) = upper($1) and lower(email) = lower($2)`,
+    [number.trim(), email.trim()],
+  );
+  return rows[0] ? toAdoption(rows[0]) : null;
 }

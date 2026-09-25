@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
+import { storageConfigured, StorageNotConfiguredError } from "@/lib/db";
 import { currency, getTier, shippingLabel, site } from "@/lib/site";
 import { getCell } from "@/lib/land";
 import {
@@ -28,6 +29,18 @@ export async function POST(request: Request) {
       {
         error:
           "Payments are not connected. Add STRIPE_SECRET_KEY to .env.local and restart the server.",
+      },
+      { status: 503 },
+    );
+  }
+
+  // Refuse before Stripe is involved rather than taking money we cannot
+  // record. This is the failure that lost an order once already.
+  if (!storageConfigured()) {
+    return NextResponse.json(
+      {
+        error:
+          "Adoptions cannot be recorded right now, so we will not take your payment. Please try again shortly, or write to us.",
       },
       { status: 503 },
     );
@@ -195,6 +208,16 @@ export async function POST(request: Request) {
           error: `Spot ${e.ids.join(", ")} was adopted while you were choosing. Please pick another.`,
         },
         { status: 409 },
+      );
+    }
+    if (e instanceof StorageNotConfiguredError) {
+      console.error(e);
+      return NextResponse.json(
+        {
+          error:
+            "Adoptions cannot be recorded right now, so we will not take your payment. Please try again shortly, or write to us.",
+        },
+        { status: 503 },
       );
     }
     const message =
