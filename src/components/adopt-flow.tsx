@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
 import { FarmMap } from "./farm-map";
 import { Button } from "./ui";
 import { openPlotNames } from "@/lib/farm";
+import type { TreeHolds } from "@/lib/store";
 import { describePlot } from "@/lib/plots";
 import {
   formatDate,
@@ -35,11 +36,11 @@ const stepNames = ["Choose trees", "Name them", "Your details", "Review"];
 
 export function AdoptFlow({
   tier,
-  taken,
+  holds,
   paymentsReady,
 }: {
   tier: Tier;
-  taken: string[];
+  holds: TreeHolds;
   paymentsReady: boolean;
 }) {
   const reduce = useReducedMotion();
@@ -58,6 +59,21 @@ export function AdoptFlow({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const [error, setError] = useState<string | null>(null);
+  /** Trees that went while this person was still deciding. */
+  const [lost, setLost] = useState<string[]>([]);
+
+  // The map keeps asking the server what is free. When something we are
+  // holding on screen turns out to be gone, take it off the list here and say
+  // so, rather than letting them carry it all the way to a failed payment.
+  const onHoldsChange = useCallback((next: TreeHolds) => {
+    const held = new Set([...next.adopted, ...next.reserved]);
+    setSelected((prev) => {
+      const kept = prev.filter((id) => !held.has(id));
+      if (kept.length === prev.length) return prev;
+      setLost(prev.filter((id) => held.has(id)));
+      return kept;
+    });
+  }, []);
 
   const treesChosen = selected.length === tier.trees;
   const allNamed = selected.every((id) => (names[id] ?? "").trim().length > 0);
@@ -93,8 +109,12 @@ export function AdoptFlow({
       }
       throw new Error("No checkout session was returned.");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+      const message = e instanceof Error ? e.message : "Something went wrong.";
+      setError(message);
       setSubmitting(false);
+      // "was adopted while you were choosing" means the map is behind. Go back
+      // to it, where the live check will show what is actually free now.
+      if (/adopted while you were choosing/i.test(message)) setStep(0);
     }
   }
 
@@ -174,16 +194,40 @@ export function AdoptFlow({
               <div>
                 <p className="mb-6 max-w-[60ch] text-[15px] leading-relaxed text-stone">
                   Pick {tier.trees} {tier.trees === 1 ? "tree" : "trees"} from
-                  the map below. Only {openPlotNames} is open this season. The
-                  other three blocks are drawn so you can see the whole estate,
-                  but their trees cannot be adopted yet. Hollow dots are
-                  already adopted.
+                  the map below. You do not have to hit a dot exactly — click
+                  anywhere near a tree and it takes the closest one. Solid dots
+                  are free, hollow ones are adopted, and a broken ring means
+                  someone is at the checkout with that tree right now. The map
+                  opens on {openPlotNames}, the one block open this season;
+                  choose <span className="text-ink">All plots</span> to see the
+                  whole estate.
                 </p>
+                {lost.length > 0 && (
+                  <div className="mb-4 flex gap-3 border border-brick bg-paper-raised p-4">
+                    <Warning
+                      size={19}
+                      weight="light"
+                      className="mt-0.5 shrink-0 text-brick"
+                    />
+                    <p className="text-[14px] leading-relaxed text-ink">
+                      {lost.map((id) => describePlot(id).label).join(", ")}{" "}
+                      {lost.length === 1 ? "was" : "were"} taken while you were
+                      choosing, so {lost.length === 1 ? "it has" : "they have"}{" "}
+                      come off your list. Please pick again.
+                    </p>
+                  </div>
+                )}
                 <FarmMap
                   limit={tier.trees}
-                  takenSpotIds={taken}
+                  adoptedSpotIds={holds.adopted}
+                  reservedSpotIds={holds.reserved}
                   selectedSpotIds={selected}
-                  onSelect={(_, ids) => setSelected(ids)}
+                  live
+                  onHoldsChange={onHoldsChange}
+                  onSelect={(_, ids) => {
+                    setLost([]);
+                    setSelected(ids);
+                  }}
                 />
                 <p className="mt-5 text-[14px] text-stone">
                   {selected.length} of {tier.trees} chosen

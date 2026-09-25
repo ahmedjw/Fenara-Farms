@@ -370,19 +370,45 @@ export async function takenTreeIds(): Promise<string[]> {
 }
 
 /**
- * Trees spoken for, or an empty list when the store cannot be reached.
+ * Which trees are spoken for, and how firmly.
  *
- * For the pages that only draw the map. An outage should not take the whole
- * site down with it, and nothing is sold on the strength of this list:
- * createAdoption re-checks every tree inside its own transaction, so the
- * worst case is a tree that looks free until someone tries to buy it.
+ * Two different things, and the map should not pretend otherwise. A tree is
+ * `adopted` when someone has paid for it and it is gone for the season. It is
+ * `reserved` when someone is in checkout with it right now: a hold that
+ * lapses on its own if they do not finish, so it may well come back.
  */
-export async function takenTreeIdsForDisplay(): Promise<string[]> {
+export type TreeHolds = { adopted: string[]; reserved: string[] };
+
+export async function treeHolds(): Promise<TreeHolds> {
+  const driver = await db();
+  const { rows } = await driver.query<{ tree_id: string; paid: boolean }>(
+    `select h.tree_id, (a.status = 'active') as paid
+       from adoption_holds h
+       join adoptions a on a.number = h.adoption_number
+      where a.status <> 'cancelled'
+        and (a.status <> 'pending'
+             or a.created_at > now() - make_interval(secs => $1))`,
+    [HOLD_SECONDS],
+  );
+  return {
+    adopted: rows.filter((r) => r.paid).map((r) => r.tree_id),
+    reserved: rows.filter((r) => !r.paid).map((r) => r.tree_id),
+  };
+}
+
+/**
+ * As treeHolds, but an outage leaves the map drawn rather than broken.
+ *
+ * For the pages that only draw the map. Nothing is sold on the strength of
+ * this list: createAdoption re-checks every tree inside its own transaction,
+ * so the worst case is a tree that looks free until someone tries to buy it.
+ */
+export async function treeHoldsForDisplay(): Promise<TreeHolds> {
   try {
-    return await takenTreeIds();
+    return await treeHolds();
   } catch (e) {
     console.error("Could not read adoption holds:", e);
-    return [];
+    return { adopted: [], reserved: [] };
   }
 }
 

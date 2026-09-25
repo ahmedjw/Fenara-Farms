@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { AdoptFlow } from "@/components/adopt-flow";
 import { getTier } from "@/lib/site";
-import { takenTreeIdsForDisplay } from "@/lib/store";
+import { treeHoldsForDisplay } from "@/lib/store";
 import { stripeConfigured } from "@/lib/stripe";
 
 /* The picker must never offer a tree that has already been adopted. */
@@ -27,9 +27,9 @@ export default async function AdoptTierPage({
   const tier = getTier(tierId);
   if (!tier) notFound();
 
-  const taken = await takenTreeIdsForDisplay();
+  const holds = await treeHoldsForDisplay();
 
   return (
-    <AdoptFlow tier={tier} taken={taken} paymentsReady={stripeConfigured()} />
+    <AdoptFlow tier={tier} holds={holds} paymentsReady={stripeConfigured()} />
   );
 }

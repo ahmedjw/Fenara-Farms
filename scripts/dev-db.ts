@@ -8,8 +8,11 @@
  *   npm run dev:db                       # in one terminal
  *   DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres npm run dev
  *
- * For a database that survives a restart, point a real Postgres at
- * DATABASE_URL instead. The schema is created on first use either way.
+ * It serves one client at a time, which is enough for the site but means a
+ * second process — a seed script, psql — is refused while the site is running.
+ * Stop one to use the other. For anything more, or for a database that
+ * survives a restart, point a real Postgres at DATABASE_URL instead. The
+ * schema is created on first use either way.
  */
 
 import { PGlite } from "@electric-sql/pglite";

@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { MagnifyingGlass, Tree, X } from "@phosphor-icons/react";
+import { pointInPolygon } from "@/lib/land";
+import type { TreeHolds } from "@/lib/store";
 import {
   adoptableTrees,
   buildings,
@@ -42,25 +51,98 @@ export type TreeSelection = {
 type Props = {
   /** Stored spot ids of the trees currently picked. */
   selectedSpotIds?: string[];
-  /** Stored spot ids already adopted. */
-  takenSpotIds?: string[];
+  /** Stored spot ids someone has paid for. */
+  adoptedSpotIds?: string[];
+  /** Stored spot ids held by a checkout in progress. These can come back. */
+  reservedSpotIds?: string[];
   /** How many trees can be held at once. At the cap, a new pick replaces the earliest. */
   limit?: number;
   onSelect?: (selection: TreeSelection, selectedSpotIds: string[]) => void;
+  /** Keep asking the server what is still free. For the picker, not the tours. */
+  live?: boolean;
+  /** Called when the live answer changes, so a picker can drop a lost tree. */
+  onHoldsChange?: (holds: TreeHolds) => void;
 };
 
-type Status = "available" | "adopted" | "closed";
-type Filter = "all" | "available" | "adopted";
+type Status = "available" | "reserved" | "adopted" | "closed";
+type Filter = "all" | "available" | "taken";
 
+/** Radius of the drawn dot, in map units before the zoom is applied. */
 const DOT = 4.2;
+
+/**
+ * Radius of the focus ring drawn around a tree reached by keyboard.
+ *
+ * Pointer input does not use this. Giving each tree its own hit circle was the
+ * obvious approach and it does not work: the trees are 15 map units apart, so
+ * a circle big enough to be comfortable overlaps its neighbours, and one small
+ * enough not to comes out at 13 CSS pixels across — half of WCAG 2.5.8's 24px
+ * minimum, and the reason picking a tree felt like threading a needle.
+ * Pointer input goes through `nearestTree` instead.
+ */
+const HIT = 8;
+
+/**
+ * How near the pointer must come to a tree, in map units, to mean it.
+ *
+ * Roughly one and a half times the planting spacing, so anywhere inside a plot
+ * lands on something, while the ridge and the empty ground between plots
+ * select nothing.
+ */
+const NEAR = 26;
+
+/** How often the picker asks the server what is still free. */
+const POLL_MS = 20_000;
+
+/** Dot, ring and hover halo for each state. */
+const LOOKS: Record<
+  Status | "picked",
+  { fill: string; stroke?: string; dash?: boolean; halo: string }
+> = {
+  available: { fill: "var(--color-olive)", halo: "var(--color-olive)" },
+  picked: {
+    fill: "var(--color-brick)",
+    stroke: "var(--color-paper)",
+    halo: "var(--color-brick)",
+  },
+  // Hollow with a broken ring: held, but not necessarily gone.
+  reserved: {
+    fill: "var(--color-paper)",
+    stroke: "var(--color-brick)",
+    dash: true,
+    halo: "var(--color-brick)",
+  },
+  adopted: {
+    fill: "var(--color-paper)",
+    stroke: "var(--color-olive)",
+    halo: "var(--color-olive)",
+  },
+  closed: { fill: "var(--color-stone-light)", halo: "var(--color-stone)" },
+};
+
+const WORDS: Record<Status, string> = {
+  available: "available",
+  reserved: "on hold",
+  adopted: "adopted",
+  closed: "opens later",
+};
 
 export function FarmMap({
   selectedSpotIds = [],
-  takenSpotIds = [],
+  adoptedSpotIds = [],
+  reservedSpotIds = [],
   limit = 1,
   onSelect,
+  live = false,
+  onHoldsChange,
 }: Props) {
-  const [plotId, setPlotId] = useState<string | null>(null);
+  // Someone here to pick a tree starts zoomed into the plot they can pick
+  // from. At the whole-estate view the trees are 14 CSS pixels apart; inside a
+  // plot they are 40, which is the difference between aiming and just
+  // pointing. Browsing still opens on the whole estate.
+  const [plotId, setPlotId] = useState<string | null>(
+    onSelect ? (openPlots[0]?.id ?? null) : null,
+  );
   const [treeId, setTreeId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
@@ -68,16 +150,68 @@ export function FarmMap({
   const [missed, setMissed] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const treeRefs = useRef(new Map<string, SVGCircleElement>());
+  const svgRef = useRef<SVGSVGElement>(null);
 
-  const taken = useMemo(() => new Set(takenSpotIds), [takenSpotIds]);
+  // What the server last said. Seeded from the render, then kept current by
+  // the poll below, so a tree taken while someone deliberates greys out under
+  // them instead of failing at checkout.
+  const [holds, setHolds] = useState<TreeHolds>(() => ({
+    adopted: adoptedSpotIds,
+    reserved: reservedSpotIds,
+  }));
+  const fromServer = `${adoptedSpotIds.join()}|${reservedSpotIds.join()}`;
+  const lastFromServer = useRef(fromServer);
+  useEffect(() => {
+    // A fresh render of the page wins over anything the poll has learned.
+    if (lastFromServer.current === fromServer) return;
+    lastFromServer.current = fromServer;
+    setHolds({ adopted: adoptedSpotIds, reserved: reservedSpotIds });
+  }, [fromServer, adoptedSpotIds, reservedSpotIds]);
+
+  const report = useRef(onHoldsChange);
+  report.current = onHoldsChange;
+
+  useEffect(() => {
+    if (!live) return;
+    let stopped = false;
+    const pull = async () => {
+      try {
+        const res = await fetch("/api/availability", { cache: "no-store" });
+        if (!res.ok || stopped) return;
+        const next = (await res.json()) as TreeHolds;
+        if (stopped || !Array.isArray(next.adopted)) return;
+        setHolds(next);
+        report.current?.(next);
+      } catch {
+        // Offline, or the tab went away mid-request. The next tick retries.
+      }
+    };
+    const timer = setInterval(pull, POLL_MS);
+    // Coming back to the tab is when the snapshot is most likely to be stale.
+    const onShow = () => document.visibilityState === "visible" && pull();
+    document.addEventListener("visibilitychange", onShow);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onShow);
+    };
+  }, [live]);
+
+  const adopted = useMemo(() => new Set(holds.adopted), [holds.adopted]);
+  const reserved = useMemo(() => new Set(holds.reserved), [holds.reserved]);
   const selected = useMemo(() => new Set(selectedSpotIds), [selectedSpotIds]);
 
-  const statusOf = (tree: FarmTree): Status =>
-    !tree.spotId
-      ? "closed"
-      : taken.has(tree.spotId)
-        ? "adopted"
-        : "available";
+  const statusOf = useCallback(
+    (tree: FarmTree): Status =>
+      !tree.spotId
+        ? "closed"
+        : adopted.has(tree.spotId)
+          ? "adopted"
+          : reserved.has(tree.spotId)
+            ? "reserved"
+            : "available",
+    [adopted, reserved],
+  );
 
   const plot = plotId ? getPlot(plotId) : undefined;
   const tree = treeId ? treeById.get(treeId) : undefined;
@@ -91,27 +225,82 @@ export function FarmMap({
 
   const counts = useMemo(() => {
     const byPlot = new Map(
-      plots.map((p) => [p.id, { total: 0, available: 0, adopted: 0 }]),
+      plots.map((p) => [
+        p.id,
+        { total: 0, available: 0, reserved: 0, adopted: 0 },
+      ]),
     );
     for (const t of trees) {
       const row = byPlot.get(t.plotId)!;
       row.total += 1;
       const status = statusOf(t);
       if (status === "available") row.available += 1;
+      if (status === "reserved") row.reserved += 1;
       if (status === "adopted") row.adopted += 1;
     }
     return byPlot;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taken]);
+  }, [statusOf]);
 
-  const shown = (t: FarmTree) =>
-    filter === "all" ? true : statusOf(t) === filter;
+  const shown = (t: FarmTree) => {
+    if (filter === "all") return true;
+    const status = statusOf(t);
+    return filter === "available"
+      ? status === "available"
+      : status === "adopted" || status === "reserved";
+  };
+
+  const visible = useMemo(
+    () => trees.filter(shown),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filter, statusOf],
+  );
+
+  /** Turns a pointer position into coordinates in the layer the trees live in. */
+  const pointIn = useCallback(
+    (e: { clientX: number; clientY: number }) => {
+      const svg = svgRef.current;
+      const ctm = svg?.getScreenCTM();
+      if (!svg || !ctm) return null;
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+      // Undo the zoom the trees are drawn inside.
+      return { x: (p.x - view.x) / view.scale, y: (p.y - view.y) / view.scale };
+    },
+    [view.x, view.y, view.scale],
+  );
+
+  /**
+   * The tree the pointer means: the nearest one, within NEAR.
+   *
+   * This is Voronoi hit testing, the usual answer for picking small marks on a
+   * chart — every point on the map belongs to whichever tree is closest, so
+   * each tree's target is as large as it can be without stealing from its
+   * neighbours, and there is no dead space to miss into. Measuring all 482
+   * trees is quicker than it sounds and exact, so there is no triangulation
+   * library here to keep in step with the data.
+   */
+  const nearestTree = useCallback(
+    (x: number, y: number): FarmTree | null => {
+      let best: FarmTree | null = null;
+      let bestDistance = NEAR * NEAR;
+      for (const t of visible) {
+        const dx = t.x - x;
+        const dy = t.y - y;
+        const d = dx * dx + dy * dy;
+        if (d < bestDistance) {
+          bestDistance = d;
+          best = t;
+        }
+      }
+      return best;
+    },
+    [visible],
+  );
 
   function choose(target: FarmTree) {
     setTreeId(target.id);
     setPlotId(target.plotId);
     setMissed(false);
-    if (!onSelect || !target.spotId || taken.has(target.spotId)) return;
+    if (!onSelect || !target.spotId || statusOf(target) !== "available") return;
 
     const spotId = target.spotId;
     const picked = selected.has(spotId);
@@ -175,7 +364,7 @@ export function FarmMap({
 
   const tabStop =
     (tree?.spotId && tree.id) ??
-    adoptableTrees.find((t) => !taken.has(t.spotId!))?.id ??
+    adoptableTrees.find((t) => statusOf(t) === "available")?.id ??
     adoptableTrees[0]?.id;
 
   const hovered = hoverId ? treeById.get(hoverId) : undefined;
@@ -253,7 +442,7 @@ export function FarmMap({
             [
               ["all", "All"],
               ["available", "Available"],
-              ["adopted", "Adopted"],
+              ["taken", "Taken"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -277,11 +466,11 @@ export function FarmMap({
         {/* Map */}
         <div className="relative min-w-0 overflow-hidden rounded-[2px] border border-line bg-paper-sunk">
           <svg
+            ref={svgRef}
             viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`}
             className="block max-h-[82vh] w-full touch-manipulation select-none"
             role="group"
             aria-label="Map of the farm. Four plots, every tree on the estate."
-            onClick={() => setTreeId(null)}
           >
             <g
               className="motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-[cubic-bezier(.4,0,.2,1)]"
@@ -323,12 +512,8 @@ export function FarmMap({
                       plotId === p.id ? 3 / view.scale : p.open ? 2.75 : 1.5
                     }
                     opacity={active ? 1 : 0.45}
-                    className="cursor-pointer motion-safe:transition-[fill,opacity] motion-safe:duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPlotId(p.id);
-                      setTreeId(null);
-                    }}
+                    pointerEvents="none"
+                    className="motion-safe:transition-[fill,opacity] motion-safe:duration-300"
                   >
                     <title>{p.name}</title>
                   </path>
@@ -365,60 +550,116 @@ export function FarmMap({
                 const status = statusOf(t);
                 const isPicked = Boolean(t.spotId && selected.has(t.spotId));
                 const isOpen = treeId === t.id;
-                const r =
-                  (DOT * (isOpen ? 2 : hoverId === t.id ? 1.5 : 1)) / view.scale;
-                const fill = isPicked
-                  ? "var(--color-brick)"
-                  : status === "adopted"
-                    ? "var(--color-paper)"
-                    : status === "closed"
-                      ? "var(--color-stone-light)"
-                      : "var(--color-olive)";
+                const isHot = hoverId === t.id || isOpen;
+                const pickable = Boolean(onSelect) && status === "available";
+                const dimmed = Boolean(plotId && plotId !== t.plotId);
+                const look = LOOKS[isPicked ? "picked" : status];
+                const r = (DOT * (isOpen ? 1.9 : isHot ? 1.45 : 1)) / view.scale;
+                const label = `Tree ${t.id}, ${plotOf(t).name}, ${
+                  isPicked ? "your pick" : WORDS[status]
+                }`;
                 return (
-                  <circle
+                  <g
                     key={t.id}
-                    ref={(el) => {
-                      if (el) treeRefs.current.set(t.id, el);
-                      else treeRefs.current.delete(t.id);
-                    }}
-                    cx={t.x}
-                    cy={t.y}
-                    r={r}
-                    fill={fill}
-                    stroke={
-                      isPicked || status === "adopted"
-                        ? isPicked
-                          ? "var(--color-paper)"
-                          : "var(--color-olive)"
-                        : undefined
-                    }
-                    strokeWidth={(isPicked ? 2 : 1.4) / view.scale}
-                    opacity={plotId && plotId !== t.plotId ? 0.3 : 1}
-                    tabIndex={t.id === tabStop ? 0 : -1}
-                    role={onSelect && status === "available" ? "checkbox" : "button"}
-                    aria-checked={onSelect && status === "available" ? isPicked : undefined}
-                    aria-label={`Tree ${t.id}, ${plotOf(t).name}, ${
-                      status === "adopted"
-                        ? "already adopted"
-                        : status === "closed"
-                          ? "not open this season"
-                          : isPicked
-                            ? "your pick"
-                            : "available"
-                    }`}
-                    className="cursor-pointer outline-none focus-visible:stroke-brick motion-safe:transition-[r]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      choose(t);
-                    }}
-                    onKeyDown={(e) => onKey(e, t)}
-                    onMouseEnter={() => setHoverId(t.id)}
-                    onMouseLeave={() => setHoverId((id) => (id === t.id ? null : id))}
-                    onFocus={() => setTreeId(t.id)}
-                  />
+                    opacity={dimmed ? 0.3 : 1}
+                    className="motion-safe:transition-opacity motion-safe:duration-300"
+                  >
+                    {/* A halo under the pointer, so the tree you are about to
+                        click reads as the size of its target, not its dot. */}
+                    {isHot && !dimmed && (
+                      <circle
+                        cx={t.x}
+                        cy={t.y}
+                        r={(DOT * 2.6) / view.scale}
+                        fill={look.halo}
+                        fillOpacity={0.22}
+                        pointerEvents="none"
+                      />
+                    )}
+                    <circle
+                      cx={t.x}
+                      cy={t.y}
+                      r={r}
+                      fill={look.fill}
+                      stroke={look.stroke}
+                      strokeWidth={(isPicked ? 2.2 : 1.4) / view.scale}
+                      strokeDasharray={
+                        look.dash
+                          ? `${2.6 / view.scale} ${2 / view.scale}`
+                          : undefined
+                      }
+                      pointerEvents="none"
+                      className="motion-safe:transition-[r] motion-safe:duration-150"
+                    />
+                    {/* Keyboard and screen readers reach a tree here: one
+                        focusable, labelled node each, with a focus ring big
+                        enough to see. It takes no pointer events — the mouse
+                        and touch go through the overlay below the map, which
+                        picks by proximity instead of by direct hit. */}
+                    <circle
+                      ref={(el) => {
+                        if (el) treeRefs.current.set(t.id, el);
+                        else treeRefs.current.delete(t.id);
+                      }}
+                      cx={t.x}
+                      cy={t.y}
+                      r={HIT}
+                      fill="none"
+                      strokeWidth={2 / view.scale}
+                      pointerEvents="none"
+                      tabIndex={t.id === tabStop ? 0 : -1}
+                      role={pickable ? "checkbox" : "button"}
+                      aria-checked={pickable ? isPicked : undefined}
+                      aria-label={label}
+                      className="outline-none focus-visible:stroke-brick"
+                      onKeyDown={(e) => onKey(e, t)}
+                      onFocus={() => setTreeId(t.id)}
+                    />
+                  </g>
                 );
               })}
             </g>
+
+            {/*
+              Every pointer event on the map lands here, and is handed to
+              whichever tree is nearest. Drawn last so it sits above the trees,
+              which take no pointer events of their own any more.
+
+              This is what makes a 7px dot comfortable to hit: you are not
+              aiming at the dot, you are pointing at the region around it, and
+              the regions tile the whole plot. Clicks that fall near no tree
+              fall through to the plot underneath, which is how zooming by
+              clicking a plot still works.
+            */}
+            <rect
+              x={viewBox.x}
+              y={viewBox.y}
+              width={viewBox.width}
+              height={viewBox.height}
+              fill="transparent"
+              className={hoverId ? "cursor-pointer" : "cursor-default"}
+              onPointerMove={(e) => {
+                // Touch has no hover; a tap goes straight to onClick.
+                if (e.pointerType !== "mouse") return;
+                const at = pointIn(e);
+                setHoverId(at ? (nearestTree(at.x, at.y)?.id ?? null) : null);
+              }}
+              onPointerLeave={() => setHoverId(null)}
+              onClick={(e) => {
+                const at = pointIn(e);
+                if (!at) return;
+                const near = nearestTree(at.x, at.y);
+                if (near) {
+                  choose(near);
+                  return;
+                }
+                const under = plots.find((p) =>
+                  pointInPolygon(at.x, at.y, p.polygon),
+                );
+                setTreeId(null);
+                if (under) setPlotId(under.id);
+              }}
+            />
           </svg>
 
           {/* Plot names, in HTML so they stay readable at any zoom. */}
@@ -466,17 +707,32 @@ export function FarmMap({
               style={at(hovered.x, hovered.y)}
               className="pointer-events-none absolute -translate-x-1/2 -translate-y-[115%] rounded-[2px] bg-ink px-3 py-2 text-[12px] whitespace-nowrap text-paper"
             >
-              {hovered.id} · {plotOf(hovered).name} ·{" "}
-              {statusOf(hovered) === "adopted"
-                ? "adopted"
-                : statusOf(hovered) === "closed"
-                  ? "opens later"
-                  : "available"}
+              <span className="font-medium">{hovered.id}</span>
+              <span className="mx-1.5 text-paper/50">·</span>
+              {plotOf(hovered).name}
+              <span className="mx-1.5 text-paper/50">·</span>
+              <span
+                className={
+                  hovered.spotId && selected.has(hovered.spotId)
+                    ? "text-olive-soft"
+                    : statusOf(hovered) === "available"
+                      ? "text-olive-soft"
+                      : "text-paper/70"
+                }
+              >
+                {hovered.spotId && selected.has(hovered.spotId)
+                  ? "your pick"
+                  : WORDS[statusOf(hovered)]}
+              </span>
             </span>
           )}
 
           <div className="pointer-events-none absolute bottom-4 left-4 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-[2px] bg-paper/85 px-3 py-2 text-[12px] text-stone">
             <Key className="bg-olive" label="Available" />
+            <Key
+              className="border border-dashed border-brick bg-paper"
+              label="On hold"
+            />
             <Key className="border border-olive bg-paper" label="Adopted" />
             {onSelect && <Key className="bg-brick" label="Your pick" />}
             <Key className="bg-stone-light" label="Opens later" />
@@ -593,7 +849,13 @@ export function FarmMap({
   );
 }
 
-function PlotCard({ plot, count }: { plot: FarmPlot; count: { total: number; available: number; adopted: number } }) {
+function PlotCard({
+  plot,
+  count,
+}: {
+  plot: FarmPlot;
+  count: { total: number; available: number; reserved: number; adopted: number };
+}) {
   const adoptedShare = count.total ? Math.round((count.adopted / count.total) * 100) : 0;
   return (
     <div
@@ -636,6 +898,13 @@ function PlotCard({ plot, count }: { plot: FarmPlot; count: { total: number; ava
           <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.12em] text-stone">
             {adoptedShare}% adopted
           </p>
+          {count.reserved > 0 && (
+            <p className="mt-3 text-[13px] leading-relaxed text-stone">
+              <span className="text-brick">{count.reserved}</span>{" "}
+              {count.reserved === 1 ? "tree is" : "trees are"} on hold while
+              someone finishes checking out. Those come back if they do not.
+            </p>
+          )}
           <p className="mt-4 text-[13px] leading-relaxed text-stone">
             Click any tree on the map to see its details.
           </p>
@@ -702,13 +971,15 @@ function TreeCard({
         <Fact
           label="Status"
           value={
-            status === "adopted"
-              ? "Adopted"
-              : status === "closed"
-                ? "Opens later"
-                : picked
-                  ? "Your pick"
-                  : "Available"
+            picked
+              ? "Your pick"
+              : status === "available"
+                ? "Available"
+                : status === "reserved"
+                  ? "On hold"
+                  : status === "adopted"
+                    ? "Adopted"
+                    : "Opens later"
           }
           strong={status === "available"}
         />
@@ -733,6 +1004,12 @@ function TreeCard({
           </Link>
         ))}
 
+      {status === "reserved" && (
+        <p className="mt-6 rounded-[2px] border-l-2 border-brick bg-paper-sunk p-4 text-[13px] leading-relaxed text-stone">
+          Someone is at the checkout with this tree. If they do not finish it
+          comes back, usually within half an hour, so it is worth looking again.
+        </p>
+      )}
       {status === "adopted" && (
         <p className="mt-6 rounded-[2px] bg-paper-sunk p-4 text-[13px] leading-relaxed text-stone">
           This tree is adopted for the season. Its oil goes to whoever looks
