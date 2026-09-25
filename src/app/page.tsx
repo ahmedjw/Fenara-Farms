@@ -17,13 +17,13 @@ import { ButtonLink, Eyebrow, Section } from "@/components/ui";
 import { faq } from "@/lib/faq";
 import { adoptableTrees, openPlotNames } from "@/lib/farm";
 import { groveFacts } from "@/lib/site";
-import { takenTreeIds } from "@/lib/store";
+import { takenTreeIdsForDisplay } from "@/lib/store";
 
 /* Availability on the embedded map refreshes every 5 minutes. */
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const taken = await takenTreeIds();
+  const taken = await takenTreeIdsForDisplay();
 
   return (
     <>

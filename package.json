@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:db": "tsx scripts/dev-db.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx scripts/store.test.ts",
+    "recover": "tsx scripts/recover-from-stripe.ts"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",
@@ -14,16 +17,21 @@
     "geist": "^1.3.1",
     "motion": "^11.15.0",
     "next": "^15.1.3",
+    "pg": "^8.23.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "stripe": "^17.5.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^22.10.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "tailwindcss": "^4.0.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.7.2"
   }
 }

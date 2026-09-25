@@ -128,28 +128,71 @@ ids used by adoptions made before either map, so those still display.
 
 ## Where the data lives
 
-Adoptions are written to `data/adoptions.json`. That is deliberate: it makes the
-whole flow work end to end without standing up a database.
+Adoptions live in Postgres. Set `DATABASE_URL` and the schema is created on
+first use — there is no migration step to remember. Anything that speaks
+Postgres works: Replit's built-in database, Neon, Supabase, or your own server.
 
-**Before taking live payments, move this to a real database.** File storage does
-not survive a redeploy on serverless hosts like Vercel, so adoptions would be
-lost. Every read and write goes through [`src/lib/store.ts`](src/lib/store.ts),
-so this means rewriting that one file and nothing else.
+Every read and write goes through [`src/lib/store.ts`](src/lib/store.ts), and
+the connection lives in [`src/lib/db.ts`](src/lib/db.ts). Two tables:
+
+- `adoptions` — the record of what someone bought. Keeps its trees listed even
+  after it is cancelled.
+- `adoption_holds` — only "is this tree spoken for right now". Its primary key
+  on `tree_id` is what makes selling one tree twice impossible rather than
+  merely unlikely, however many instances are running.
+
+There is no fallback to local storage when `DATABASE_URL` is missing. Checkout
+refuses rather than taking money it cannot record. This used to be a JSON file
+on disk, and that lost a paid order: the deployment's filesystem is not shared
+between instances and does not survive a cold start, so the record written
+during checkout was gone by the time Stripe redirected the customer back.
+
+An unpaid checkout holds its trees for 35 minutes, and its Stripe session is
+created with a 30 minute life, so an abandoned basket gives the trees back on
+its own. The `checkout.session.expired` webhook is still the tidy path; the
+timeout is what happens when it does not arrive.
+
+```bash
+npm test          # the store, against Postgres compiled to WebAssembly
+```
+
+For local work without installing anything, `npm run dev:db` serves a
+throwaway Postgres on 5433 that the site talks to exactly as it will talk to
+Replit or Neon:
+
+```bash
+npm run dev:db    # one terminal
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres npm run dev
+```
+
+---
+
+## Recovering an order Stripe took but we did not record
+
+Checkout writes `tierId`, `trees` and `customerName` into the Stripe session
+and subscription metadata, so a lost adoption can be rebuilt from Stripe:
+
+```bash
+npm run recover              # list what is missing, change nothing
+npm run recover -- --apply   # write the missing adoptions
+```
+
+Worth running now and then either way: it reports any paid subscription with no
+adoption behind it. It cannot bring back the names the customer gave each tree,
+or a gift message — those were only ever in our own store.
 
 ---
 
 ## Previewing the account page
 
-The account page needs an adoption to show. Before you have real ones, copy the
-sample record over:
+The account page needs an adoption to show. With `DATABASE_URL` set:
 
 ```bash
-cp data/adoptions.sample.json data/adoptions.json
+npm run recover              # if you have real Stripe orders
 ```
 
-Then go to `/account` and look up `FEN-2026-0001` with `marisol@example.com`.
-Delete `data/adoptions.json` when you are done. It is git ignored, and real
-adoptions get written to that same file once Stripe is connected.
+or insert one by hand from `data/adoptions.sample.json` and look it up at
+`/account` with its number and email.
 
 ---
 
@@ -181,14 +224,17 @@ src/
     farm.ts                      plots and trees from assets/farm-data.json
     land.ts                      the spot ids adoptions are stored under
     store.ts                     adoption persistence
+    db.ts                        the Postgres connection and schema
     faq.ts  stripe.ts
+scripts/
+  store.test.ts                  store tests, run with npm test
+  recover-from-stripe.ts         rebuild adoptions Stripe has and we do not
 ```
 
 ---
 
 ## Still to do before launch
 
-- Move adoptions from the JSON file to a real database.
 - Wire `api/contact` to an email provider so contact form messages reach an
   inbox. The route has the Resend snippet in a comment.
 - Send a confirmation email with the adoption number from the Stripe webhook.

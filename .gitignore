@@ -12,6 +12,7 @@ next-env.d.ts
 .vercel
 tsconfig.tsbuildinfo
 data/adoptions.json
+.pglite/
 
 # Source photos straight off the phone. The cropped, compressed versions the
 # site actually serves are committed in public/photos.

@@ -11,10 +11,19 @@
  * adoptable tree is paired with one of those spots. Customers see the tree id
  * ("LN-012"); the store keeps the spot id ("A-R46-C51"). `treeForSpot` and
  * `spotForTree` translate between them.
+ *
+ * That pairing is written into farm-data.json, one `spot` per tree, and must
+ * stay written. It used to be derived: the open plots' trees were sorted and
+ * handed the open cells of the land map in order. Deleting the six trees the
+ * barn was built over shifted every tree after them onto the next tree's
+ * spot, so ids already sold pointed at the wrong tree and one live spot was
+ * blocked by a record belonging to a tree that no longer exists.
+ *
+ * To open another plot, give each of its trees a `spot` in the data. A tree
+ * without one is not offered, which is the safe way to fail.
  */
 
 import data from "../../assets/farm-data.json";
-import { openCells } from "./land";
 
 export type Point = [number, number];
 
@@ -82,35 +91,20 @@ export const buildings: FarmBuilding[] = data.buildings.map((b) => ({
 
 const plotById = new Map(plots.map((p) => [p.id, p]));
 
-/**
- * Trees in open plots, in planting order, take the spots of the old map in
- * their own order. The pairing only has to be stable, which it is as long as
- * neither the plots nor the spots change.
- */
-export const trees: FarmTree[] = (() => {
-  const all: FarmTree[] = data.trees.map((tree) => ({
-    id: tree.id,
-    plotId: tree.plot,
-    x: tree.x,
-    y: tree.y,
-    row: tree.row,
-    pos: tree.pos,
-  }));
+/** The stored spot a tree is sold as, straight from the data. */
+const spotOf = (tree: { spot?: string }): string | undefined => tree.spot;
 
-  const adoptable = all
-    .filter((tree) => plotById.get(tree.plotId)?.open)
-    .sort(
-      (a, b) =>
-        a.plotId.localeCompare(b.plotId) || a.row - b.row || a.pos - b.pos,
-    );
-  adoptable.forEach((tree, i) => {
-    // More trees than spots would leave the last of them unadoptable, so open
-    // another zone in assets/land-zones.json when opening another plot here.
-    tree.spotId = openCells[i]?.id;
-  });
-
-  return all;
-})();
+export const trees: FarmTree[] = data.trees.map((tree) => ({
+  id: tree.id,
+  plotId: tree.plot,
+  x: tree.x,
+  y: tree.y,
+  row: tree.row,
+  pos: tree.pos,
+  // A spot only counts while its plot is open, so closing a plot takes its
+  // trees off the market without touching the pairing it will come back with.
+  spotId: plotById.get(tree.plot)?.open ? spotOf(tree) : undefined,
+}));
 
 export const treeById = new Map(trees.map((tree) => [tree.id, tree]));
 

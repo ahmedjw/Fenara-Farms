@@ -29,7 +29,22 @@ export async function POST(request: Request) {
     );
   }
 
-  const adoption = await findForCustomer(number, email);
+  let adoption;
+  try {
+    adoption = await findForCustomer(number, email);
+  } catch (e) {
+    // A lookup that cannot reach the store is not the same as one that found
+    // nothing, and telling someone their adoption does not exist would be a
+    // small cruelty.
+    console.error("Account lookup failed:", e);
+    return NextResponse.json(
+      {
+        error:
+          "We could not reach our records just now. Please try again in a minute, or write to us.",
+      },
+      { status: 503 },
+    );
+  }
 
   if (!adoption) {
     return NextResponse.json(
