@@ -154,6 +154,28 @@ timeout is what happens when it does not arrive.
 
 ```bash
 npm test          # the store, against Postgres compiled to WebAssembly
+npm run test:e2e  # picking a tree, in a real browser, on a phone and a desktop
+```
+
+The map is the one part of the site that cannot be checked by reading the
+markup: it all happens on hydration, under a finger, at a screen size. The end
+to end test drives a real Chromium at iPhone and desktop sizes. It needs the
+site running, with a database behind it:
+
+```bash
+npm run dev:db                                        # terminal one
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres   npm run build && npm start                          # terminal two
+npm run test:e2e                                      # terminal three
+```
+
+**If a `next dev` server is running, build somewhere else.** `next dev` and
+`next build` both own `.next`, and a dev server left running rewrites it under
+a production build. The page then renders but never hydrates, because the
+manifest names chunks the other build renamed — nothing works and nothing says
+why. It cost an afternoon once:
+
+```bash
+NEXT_DIST_DIR=.next-test npm run build && NEXT_DIST_DIR=.next-test npm start
 ```
 
 For local work without installing anything, `npm run dev:db` serves a

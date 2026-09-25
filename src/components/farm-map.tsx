@@ -9,7 +9,13 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { MagnifyingGlass, Tree, X } from "@phosphor-icons/react";
+import {
+  CaretLeft,
+  CaretRight,
+  MagnifyingGlass,
+  Tree,
+  X,
+} from "@phosphor-icons/react";
 import { pointInPolygon } from "@/lib/land";
 import type { TreeHolds } from "@/lib/store";
 import {
@@ -91,6 +97,14 @@ const HIT = 8;
  */
 const NEAR = 26;
 
+/**
+ * How far a finger may travel and still count as a tap, in CSS pixels.
+ *
+ * Anything more was a scroll. Touch needs the allowance; a mouse click
+ * comfortably comes in under it.
+ */
+const TAP_SLOP = 12;
+
 /** How often the picker asks the server what is still free. */
 const POLL_MS = 20_000;
 
@@ -151,6 +165,7 @@ export function FarmMap({
   const [announcement, setAnnouncement] = useState("");
   const treeRefs = useRef(new Map<string, SVGCircleElement>());
   const svgRef = useRef<SVGSVGElement>(null);
+  const tapStart = useRef<{ x: number; y: number; id: number } | null>(null);
 
   // What the server last said. Seeded from the render, then kept current by
   // the poll below, so a tree taken while someone deliberates greys out under
@@ -329,6 +344,26 @@ export function FarmMap({
     setMissed(false);
     setTreeId(found.id);
     setPlotId(found.plotId);
+  }
+
+  /** The trees of a plot in planting order, for stepping through them. */
+  const family = useCallback(
+    (plot: string) =>
+      trees
+        .filter((t) => t.plotId === plot)
+        .sort((a, b) => a.row - b.row || a.pos - b.pos),
+    [],
+  );
+
+  /** Move the open tree one along the planting. */
+  function stepTree(delta: number) {
+    if (!tree) return;
+    const row = family(tree.plotId);
+    const i = row.findIndex((t) => t.id === tree.id);
+    const next = row[(i + delta + row.length) % row.length];
+    if (!next) return;
+    setTreeId(next.id);
+    setHoverId(next.id);
   }
 
   /** Arrow keys walk the planting: along a row, then across rows. */
@@ -645,7 +680,23 @@ export function FarmMap({
                 setHoverId(at ? (nearestTree(at.x, at.y)?.id ?? null) : null);
               }}
               onPointerLeave={() => setHoverId(null)}
-              onClick={(e) => {
+              // Taps are read from the pointer itself rather than from a click
+              // event. On touch that is the difference between working and
+              // not: it fires without waiting on a synthetic click, and a
+              // finger that moved was a scroll, not a choice.
+              onPointerDown={(e) => {
+                tapStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+              }}
+              onPointerCancel={() => {
+                tapStart.current = null;
+              }}
+              onPointerUp={(e) => {
+                const start = tapStart.current;
+                tapStart.current = null;
+                if (!start || start.id !== e.pointerId) return;
+                if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > TAP_SLOP) {
+                  return;
+                }
                 const at = pointIn(e);
                 if (!at) return;
                 const near = nearestTree(at.x, at.y);
@@ -739,6 +790,63 @@ export function FarmMap({
             <Key className="bg-ink/60" label="Barn" />
           </div>
         </div>
+
+        {/*
+          What you just tapped, right under the map.
+
+          On a phone the details panel below stacks under the map and off the
+          bottom of the screen, so a tap looked like it had done nothing. On a
+          phone the trees are also only about 16px apart at best, so landing on
+          a neighbour is easy: the arrows step one tree along the planting,
+          which turns a near miss into a single tap rather than another try at
+          threading the needle.
+        */}
+        {tree && (
+          <div className="flex items-center gap-2 rounded-[2px] border border-line-strong bg-paper-raised p-2 lg:hidden">
+            <NudgeButton label="Previous tree" onClick={() => stepTree(-1)}>
+              <CaretLeft size={16} weight="bold" />
+            </NudgeButton>
+
+            <div className="min-w-0 flex-1 text-center">
+              <p className="display text-[20px] leading-none text-olive">
+                {tree.id}
+              </p>
+              <p className="mt-1 text-[12px] leading-none text-stone">
+                {plotOf(tree).name}
+                <span aria-hidden className="mx-1.5">
+                  ·
+                </span>
+                <span
+                  className={
+                    statusOf(tree) === "available" ? "text-olive-mid" : "text-brick"
+                  }
+                >
+                  {tree.spotId && selected.has(tree.spotId)
+                    ? "your pick"
+                    : WORDS[statusOf(tree)]}
+                </span>
+              </p>
+            </div>
+
+            <NudgeButton label="Next tree" onClick={() => stepTree(1)}>
+              <CaretRight size={16} weight="bold" />
+            </NudgeButton>
+
+            {onSelect && statusOf(tree) === "available" && (
+              <button
+                type="button"
+                onClick={() => choose(tree)}
+                className={`shrink-0 rounded-[2px] px-4 py-3 text-[14px] font-medium transition-colors ${
+                  tree.spotId && selected.has(tree.spotId)
+                    ? "border border-line-strong text-ink"
+                    : "bg-olive text-paper"
+                }`}
+              >
+                {tree.spotId && selected.has(tree.spotId) ? "Remove" : "Choose"}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Side panel */}
         <div className="flex flex-col gap-4">
@@ -1044,6 +1152,28 @@ function Chip({
           ? "border-olive bg-olive text-paper"
           : "border-line-strong bg-paper-raised text-stone hover:border-ink hover:text-ink"
       }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** A step-one-tree-along button, sized for a thumb. */
+function NudgeButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[2px] border border-line-strong text-ink transition-colors hover:border-ink active:bg-paper-sunk"
     >
       {children}
     </button>
