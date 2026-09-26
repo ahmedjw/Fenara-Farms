@@ -166,6 +166,10 @@ export async function POST(request: Request) {
         },
       ],
       subscription_data: { metadata },
+      // Nothing ships without somewhere to send it and someone to ring when
+      // a courier cannot find the door. Stripe collects both, so the customer
+      // is not asked twice and the address is one it has already checked.
+      phone_number_collection: { enabled: true },
       // The EU, the UK and the United States, as the shipping policy states.
       shipping_address_collection: {
         allowed_countries: [

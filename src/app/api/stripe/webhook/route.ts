@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { billingOf, billingOfSession, getStripe } from "@/lib/stripe";
+import {
+  billingOf,
+  billingOfSession,
+  deliveryOf,
+  getStripe,
+} from "@/lib/stripe";
+import { confirmAdoptionOnce } from "@/lib/email";
 import {
   activateAdoption,
   expireAdoption,
@@ -58,9 +64,12 @@ export async function POST(request: Request) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object;
-      await activateAdoption(session.id, await billingOfSession(stripe, session));
-      // Hook your transactional email in here: send the adoption number, the
-      // certificate and the welcome note.
+      const adoption = await activateAdoption(
+        session.id,
+        await billingOfSession(stripe, session),
+        deliveryOf(session),
+      );
+      if (adoption) await confirmAdoptionOnce(adoption);
       break;
     }
     case "checkout.session.expired":
@@ -94,3 +103,4 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true });
 }
+

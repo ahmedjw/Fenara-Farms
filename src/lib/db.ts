@@ -143,6 +143,12 @@ create index if not exists adoptions_email_idx
   on adoptions (lower(email));
 
 create sequence if not exists adoption_number_seq;
+
+-- Added after the first adoptions were taken. "add column if not exists" is
+-- idempotent, so this doubles as the migration for a database that already
+-- has the table: it runs on every boot and does nothing once applied.
+alter table adoptions add column if not exists delivery jsonb;
+alter table adoptions add column if not exists confirmation_sent_at timestamptz;
 `;
 
 let configured: Driver | null = null;

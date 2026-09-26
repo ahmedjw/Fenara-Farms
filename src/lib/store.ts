@@ -45,6 +45,31 @@ export type Adoption = {
   createdAt: string;
   giftFrom?: string;
   giftMessage?: string;
+  /** Set once checkout completes and Stripe hands over what it collected. */
+  delivery?: Delivery;
+  /** When the confirmation email went out. Absent means it has not. */
+  confirmationSentAt?: string;
+};
+
+/**
+ * Where the oil goes, and who to ring about it.
+ *
+ * Collected by Stripe at checkout rather than asked for twice, and copied
+ * here when the payment completes. Kept as one value because it is only ever
+ * read as one: a label to print and a number to call.
+ */
+export type Delivery = {
+  /** The name on the parcel, which need not be the name on the card. */
+  name?: string;
+  phone?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  /** State, province or county, as Stripe gives it. */
+  region?: string;
+  postalCode?: string;
+  /** Two-letter country code, e.g. "ES". */
+  country?: string;
 };
 
 export type Billing = Pick<
@@ -94,7 +119,7 @@ const WRITTEN_COLUMNS = `
   stripe_session_id, stripe_customer_id, stripe_subscription_id,
   renews_at, cancel_at_period_end, renewal_invoices, gift_from, gift_message
 `;
-const ADOPTION_COLUMNS = `${WRITTEN_COLUMNS}, created_at`;
+const ADOPTION_COLUMNS = `${WRITTEN_COLUMNS}, created_at, delivery, confirmation_sent_at`;
 
 function text(value: unknown): string | undefined {
   return typeof value === "string" && value.length ? value : undefined;
@@ -136,6 +161,10 @@ function toAdoption(row: Row): Adoption {
   if (giftFrom) adoption.giftFrom = giftFrom;
   const giftMessage = text(row.gift_message);
   if (giftMessage) adoption.giftMessage = giftMessage;
+  const delivery = row.delivery as Delivery | null;
+  if (delivery && Object.keys(delivery).length) adoption.delivery = delivery;
+  const sent = iso(row.confirmation_sent_at);
+  if (sent) adoption.confirmationSentAt = sent;
   return adoption;
 }
 
@@ -256,15 +285,18 @@ export async function getAdoptionBySession(
 export async function activateAdoption(
   sessionId: string,
   billing: Billing = {},
+  delivery?: Delivery,
 ): Promise<Adoption | null> {
   const driver = await db();
+  const hasDelivery = delivery && Object.values(delivery).some(Boolean);
   const { rows } = await driver.query(
     `update adoptions
         set status = 'active',
             stripe_customer_id = coalesce($2, stripe_customer_id),
             stripe_subscription_id = coalesce($3, stripe_subscription_id),
             renews_at = coalesce($4::timestamptz, renews_at),
-            cancel_at_period_end = coalesce($5::boolean, cancel_at_period_end)
+            cancel_at_period_end = coalesce($5::boolean, cancel_at_period_end),
+            delivery = coalesce($6::jsonb, delivery)
       where stripe_session_id = $1
       returning ${ADOPTION_COLUMNS}`,
     [
@@ -273,9 +305,37 @@ export async function activateAdoption(
       billing.stripeSubscriptionId ?? null,
       billing.renewsAt ?? null,
       billing.cancelAtPeriodEnd ?? null,
+      hasDelivery ? JSON.stringify(delivery) : null,
     ],
   );
   return rows[0] ? toAdoption(rows[0]) : null;
+}
+
+/**
+ * Claims the right to send the confirmation email, once.
+ *
+ * True only for the caller that got there first. The webhook and the success
+ * page both activate an adoption and both would otherwise send, and a
+ * customer who is emailed their adoption twice wonders what went wrong.
+ */
+export async function claimConfirmationEmail(number: string): Promise<boolean> {
+  const driver = await db();
+  const { rows } = await driver.query(
+    `update adoptions set confirmation_sent_at = now()
+      where number = $1 and confirmation_sent_at is null
+      returning number`,
+    [number],
+  );
+  return rows.length > 0;
+}
+
+/** Hands the claim back when the send failed, so it can be retried. */
+export async function releaseConfirmationEmail(number: string): Promise<void> {
+  const driver = await db();
+  await driver.query(
+    `update adoptions set confirmation_sent_at = null where number = $1`,
+    [number],
+  );
 }
 
 /**

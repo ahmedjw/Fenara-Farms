@@ -187,6 +187,26 @@ npm run dev:db    # one terminal
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5433/postgres npm run dev
 ```
 
+### What checkout collects
+
+Stripe asks for the delivery address and a phone number, so nobody is asked
+twice and the address is one Stripe has already checked. Both only reach us on
+the completed session, so they are written to the adoption when the payment
+lands, by the webhook and again by the success page, whichever gets there
+first. They show on the account page so a customer can catch a wrong address
+while there is still most of a year to fix it.
+
+### The confirmation email
+
+Sent once when a payment completes, with the adoption number, the trees and
+their names, what was charged, and where it is going. The webhook and the
+success page both try; whichever wins claims the right to send in the
+database first, so nobody is emailed twice. A send that fails hands the claim
+back so it can go later.
+
+With no `RESEND_API_KEY` the message is logged instead of sent, and the log
+says so.
+
 ---
 
 ## Recovering an order Stripe took but we did not record

@@ -213,6 +213,42 @@ function GroveDashboard({
 
       <Renewal adoption={adoption} price={tier ? formatPrice(tierTotal(tier)) : null} />
 
+      {/* Where the oil goes. Shown so a customer can catch a wrong address
+          while there is still most of a year to fix it. */}
+      {adoption.delivery && (
+        <section className="mt-6 border border-line bg-paper-raised p-6">
+          <h3 className="display text-[26px] leading-none text-ink">Shipping to</h3>
+          <address className="mt-3 text-[14px] leading-relaxed text-stone not-italic">
+            {[
+              adoption.delivery.name,
+              adoption.delivery.line1,
+              adoption.delivery.line2,
+              [adoption.delivery.postalCode, adoption.delivery.city]
+                .filter(Boolean)
+                .join(" "),
+              adoption.delivery.region,
+              adoption.delivery.country,
+            ]
+              .filter(Boolean)
+              .map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            {adoption.delivery.phone && (
+              <span className="mt-2 block text-ink">{adoption.delivery.phone}</span>
+            )}
+          </address>
+          <p className="mt-4 text-[13px] leading-relaxed text-stone">
+            Moving, or is this wrong? Write to{" "}
+            <a href={`mailto:${site.email}`} className="text-ink underline underline-offset-4">
+              {site.email}
+            </a>{" "}
+            and we will change it. Nothing ships until November.
+          </p>
+        </section>
+      )}
+
       {/* Your trees */}
       <section className="mt-12">
         <h3 className="display text-[26px] leading-none text-ink">
