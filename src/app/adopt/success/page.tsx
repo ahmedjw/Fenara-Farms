@@ -4,7 +4,8 @@ import { CheckCircle, Warning } from "@phosphor-icons/react/dist/ssr";
 import { Certificate } from "@/components/certificate";
 import { Section } from "@/components/ui";
 import { getAdoptionBySession, activateAdoption } from "@/lib/store";
-import { billingOfSession, getStripe } from "@/lib/stripe";
+import { billingOfSession, deliveryOf, getStripe } from "@/lib/stripe";
+import { confirmAdoptionOnce } from "@/lib/email";
 import { formatDate, getTier, site } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Your adoption is confirmed" };
@@ -41,7 +42,11 @@ export default async function SuccessPage({
           (await activateAdoption(
             sessionId,
             await billingOfSession(stripe, session),
+            deliveryOf(session),
           )) ?? adoption;
+        // The webhook usually gets here first and this does nothing. When it
+        // has not been configured, this is the only confirmation that goes.
+        await confirmAdoptionOnce(adoption);
       }
     } catch {
       // Leave it pending. The webhook will catch up.

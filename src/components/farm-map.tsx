@@ -848,8 +848,18 @@ export function FarmMap({
           </div>
         )}
 
-        {/* Side panel */}
-        <div className="flex flex-col gap-4">
+        {/*
+          Side panel.
+
+          Hidden on a phone while picking. It is 500px of tree details and a
+          search box between the map and the Continue button, and on a 664px
+          screen that put Continue two thirds of a screen below the fold: you
+          chose a tree and then had to go looking for the way forward. The bar
+          above already says which tree you got and offers Choose, Remove and
+          the neighbours, so nothing here is lost that matters at that width.
+          Browsing keeps it, because there the panel is the point.
+        */}
+        <div className={`flex-col gap-4 ${onSelect ? "hidden lg:flex" : "flex"}`}>
           {tree ? (
             <TreeCard
               tree={tree}

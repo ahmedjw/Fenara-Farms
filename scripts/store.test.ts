@@ -12,6 +12,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { configure, SCHEMA, type Driver, type Row } from "../src/lib/db";
 import {
   activateAdoption,
+  claimConfirmationEmail,
   createAdoption,
   expireAdoption,
   findForCustomer,
@@ -19,6 +20,7 @@ import {
   getAdoptionBySession,
   PENDING_HOLD_MS,
   recordRenewal,
+  releaseConfirmationEmail,
   syncSubscription,
   takenTreeIds,
   treeHolds,
@@ -173,6 +175,44 @@ async function main() {
 
   const untouched = await activateAdoption("cs_one", {});
   eq(untouched?.stripeSubscriptionId, "sub_1", "an empty update keeps what was there");
+
+  console.log("\nwhere the oil goes");
+  const posted = await activateAdoption(
+    "cs_one",
+    {},
+    {
+      name: "Marisol Aguirre",
+      phone: "+34 600 123 456",
+      line1: "Calle Mayor 14",
+      city: "Setenil de las Bodegas",
+      postalCode: "11692",
+      country: "ES",
+    },
+  );
+  eq(posted?.delivery?.phone, "+34 600 123 456", "a phone number is kept");
+  eq(posted?.delivery?.line1, "Calle Mayor 14", "and the address with it");
+  const keptAddress = await activateAdoption("cs_one", {});
+  eq(
+    keptAddress?.delivery?.line1,
+    "Calle Mayor 14",
+    "a later update carrying no address does not wipe it",
+  );
+
+  console.log("\nthe confirmation email, exactly once");
+  ok(await claimConfirmationEmail("FEN-2026-0001"), "the first caller may send");
+  ok(
+    !(await claimConfirmationEmail("FEN-2026-0001")),
+    "and the second is told not to",
+  );
+  ok(
+    Boolean((await getAdoption("FEN-2026-0001"))?.confirmationSentAt),
+    "the adoption records that it went",
+  );
+  await releaseConfirmationEmail("FEN-2026-0001");
+  ok(
+    await claimConfirmationEmail("FEN-2026-0001"),
+    "a failed send can be claimed again, so nobody is left without one",
+  );
 
   console.log("\ntelling paid from merely held");
   const split = await treeHolds();

@@ -7,7 +7,7 @@
  */
 
 import Stripe from "stripe";
-import type { Billing } from "./store";
+import type { Billing, Delivery } from "./store";
 
 let cached: Stripe | null = null;
 
@@ -45,6 +45,33 @@ export async function billingOfSession(
       ? await stripe.subscriptions.retrieve(session.subscription)
       : session.subscription;
   return billingOf(subscription);
+}
+
+/**
+ * Where to send the oil, out of what Stripe collected at checkout.
+ *
+ * Stripe asks for the shipping address and the phone number, so the customer
+ * is not asked twice and the address is one it has already validated. It only
+ * reaches us here, on the completed session, which is why nothing before this
+ * point knows where anything is going.
+ */
+export function deliveryOf(session: Stripe.Checkout.Session): Delivery {
+  const shipping = session.shipping_details ?? session.collected_information?.shipping_details;
+  const address = shipping?.address ?? session.customer_details?.address;
+  const delivery: Delivery = {};
+  const set = (key: keyof Delivery, value: string | null | undefined) => {
+    const trimmed = value?.trim();
+    if (trimmed) delivery[key] = trimmed;
+  };
+  set("name", shipping?.name ?? session.customer_details?.name);
+  set("phone", session.customer_details?.phone);
+  set("line1", address?.line1);
+  set("line2", address?.line2);
+  set("city", address?.city);
+  set("region", address?.state);
+  set("postalCode", address?.postal_code);
+  set("country", address?.country);
+  return delivery;
 }
 
 /**
