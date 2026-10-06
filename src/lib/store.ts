@@ -472,6 +472,45 @@ export async function treeHoldsForDisplay(): Promise<TreeHolds> {
   }
 }
 
+/** Every adoption ever recorded, newest first. For the admin dashboard. */
+export async function listAdoptions(): Promise<Adoption[]> {
+  const driver = await db();
+  const { rows } = await driver.query(
+    `select ${ADOPTION_COLUMNS} from adoptions order by created_at desc, number desc`,
+  );
+  return rows.map(toAdoption);
+}
+
+/**
+ * Who holds which tree right now, by adoption number.
+ *
+ * The same live answer as treeHolds, but saying whose hold it is, so the
+ * dashboard can put a name against every tree that is spoken for.
+ */
+export async function listHolds(): Promise<
+  { treeId: string; adoptionNumber: string; paid: boolean }[]
+> {
+  const driver = await db();
+  const { rows } = await driver.query<{
+    tree_id: string;
+    adoption_number: string;
+    paid: boolean;
+  }>(
+    `select h.tree_id, h.adoption_number, (a.status = 'active') as paid
+       from adoption_holds h
+       join adoptions a on a.number = h.adoption_number
+      where a.status <> 'cancelled'
+        and (a.status <> 'pending'
+             or a.created_at > now() - make_interval(secs => $1))`,
+    [HOLD_SECONDS],
+  );
+  return rows.map((r) => ({
+    treeId: r.tree_id,
+    adoptionNumber: r.adoption_number,
+    paid: r.paid,
+  }));
+}
+
 /** Lookup for the account page: adoption number plus matching email. */
 export async function findForCustomer(
   number: string,

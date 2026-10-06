@@ -26,6 +26,9 @@ export function SiteHeader() {
   // it never covers the top of the page.
   const overHero = pathname === "/";
 
+  // The admin dashboard is a tool, not a page of the shop.
+  if (pathname.startsWith("/admin")) return null;
+
   return (
     <header
       className={`${overHero ? "fixed" : "sticky"} inset-x-0 top-0 z-50 px-3 pt-3 md:px-6 md:pt-5`}

@@ -9,6 +9,8 @@
  */
 
 import { PGlite } from "@electric-sql/pglite";
+import { buildReport, toCsv } from "../src/lib/admin";
+import { newSession, passwordMatches, sessionValid } from "../src/lib/admin-auth";
 import { configure, SCHEMA, type Driver, type Row } from "../src/lib/db";
 import {
   activateAdoption,
@@ -18,6 +20,8 @@ import {
   findForCustomer,
   getAdoption,
   getAdoptionBySession,
+  listAdoptions,
+  listHolds,
   PENDING_HOLD_MS,
   recordRenewal,
   releaseConfirmationEmail,
@@ -323,6 +327,89 @@ async function main() {
     (await findForCustomer(renewing.number, "someone@else.com")) === null,
     "the wrong email finds nothing",
   );
+
+  console.log("\nthe admin dashboard");
+  // LN-005 was marked not available after this adoption was taken.
+  const stranded = await createAdoption({
+    ...base,
+    trees: ["A-R46-C55"],
+    stripeSessionId: "cs_six",
+  });
+  await activateAdoption("cs_six", { stripeSubscriptionId: "sub_6" }, {
+    line1: "Calle Real 2",
+    city: "Ronda",
+    country: "ES",
+  });
+  await claimConfirmationEmail(stranded.number);
+
+  const all = await listAdoptions();
+  eq(all.length, (await pg.query("select 1 from adoptions")).rows.length, "lists every adoption");
+  eq(all[0].number, stranded.number, "newest first");
+
+  const holds = await listHolds();
+  ok(
+    holds.some((h) => h.treeId === "A-R47-C51" && h.adoptionNumber === renewing.number && h.paid),
+    "says whose hold each tree is",
+  );
+
+  const now = Date.parse("2027-01-01T00:00:00Z");
+  const report = buildReport(all, holds, now);
+  const one = 12900 + 3500;
+  const row = (n: string) => report.adoptions.find((r) => r.number === n)!;
+  eq(row("FEN-2026-0001").payments, 1, "an ended subscription still counts its payment");
+  eq(row("FEN-2026-0002").payments, 0, "a checkout that lapsed was never paid");
+  eq(row(renewing.number).payments, 3, "a purchase and two renewals are three payments");
+  eq(row(renewing.number).collected, 3 * one, "each at the tier price plus shipping");
+  eq(report.totals.collected, 5 * one, "collected adds up every paid adoption");
+  eq(report.totals.renewals, 2 * one, "and splits out renewals");
+  eq(report.totals.yearly, 2 * one, "yearly counts only active adoptions that will renew");
+  eq(report.totals.customers, 1, "one customer however many adoptions");
+  ok(
+    row(renewing.number).flags.some((f) => f.text === "No delivery address"),
+    "an active adoption with no address is flagged",
+  );
+  ok(
+    row(renewing.number).flags.some((f) => f.text === "Confirmation email not sent"),
+    "and one whose confirmation never went",
+  );
+  ok(
+    row(stranded.number).flags.some((f) => f.text === "LN-005 no longer available"),
+    "an adoption on a tree that is gone is flagged by its tree number",
+  );
+  eq(
+    report.attention.map((r) => r.number).sort(),
+    [renewing.number, stranded.number].sort(),
+    "both land in needs attention",
+  );
+  const ln005 = report.trees.find((t) => t.id === "LN-005");
+  eq(ln005?.status, "unavailable", "the tree list shows it as not available");
+  eq(ln005?.adoptionNumber, stranded.number, "while still naming who holds it");
+  eq(
+    report.treeTotals.adopted + report.treeTotals.available +
+      report.treeTotals.reserved + report.treeTotals.unavailable,
+    report.trees.length,
+    "every tree is counted exactly once",
+  );
+
+  const csv = toCsv([["=HYPERLINK(1)", "+34 600 123 456", 'say "hi"']]);
+  ok(csv.includes(`"'=HYPERLINK(1)"`), "a formula typed by a customer is defused in CSV");
+  ok(csv.includes(`"+34 600 123 456"`), "a phone number is left as it is");
+  ok(csv.includes(`"say ""hi"""`), "quotes are escaped");
+
+  console.log("\nadmin sign-in");
+  delete process.env.ADMIN_PASSWORD;
+  ok(!passwordMatches(""), "with no password set, nothing signs in");
+  ok(newSession() === null, "and no session can be made");
+  process.env.ADMIN_PASSWORD = "olive grove";
+  ok(passwordMatches("olive grove"), "the right password signs in");
+  ok(!passwordMatches("olive"), "a wrong one does not");
+  const session = newSession()!;
+  ok(sessionValid(session.token), "a fresh session is valid");
+  ok(!sessionValid(session.token.replace(/.$/, "0")), "a tampered one is not");
+  const [, sig] = session.token.split(".");
+  ok(!sessionValid(`${Date.now() + 9e12}.${sig}`), "nor one with its expiry pushed out");
+  process.env.ADMIN_PASSWORD = "a new password";
+  ok(!sessionValid(session.token), "changing the password signs everyone out");
 
   console.log(`\n${checks - failures}/${checks} passed`);
   if (failures) process.exitCode = 1;

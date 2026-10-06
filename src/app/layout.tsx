@@ -3,6 +3,7 @@ import { EB_Garamond } from "next/font/google";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { SiteHeader } from "@/components/site-header";
+import { PublicOnly } from "@/components/public-only";
 import { SiteFooter } from "@/components/site-footer";
 import { site } from "@/lib/site";
 import "./globals.css";
@@ -50,7 +51,9 @@ export default function RootLayout({
         </a>
         <SiteHeader />
         <main id="main">{children}</main>
-        <SiteFooter />
+        <PublicOnly>
+          <SiteFooter />
+        </PublicOnly>
       </body>
     </html>
   );
