@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
 import { storageConfigured, StorageNotConfiguredError } from "@/lib/db";
 import { currency, getTier, shippingLabel, site } from "@/lib/site";
+import { spotUnavailable } from "@/lib/farm";
 import { getCell } from "@/lib/land";
 import {
   CHECKOUT_WINDOW_MS,
@@ -97,6 +98,12 @@ export async function POST(request: Request) {
     if (cell.zone.status !== "active") {
       return NextResponse.json(
         { error: `Spot ${id} is not open for adoption yet.` },
+        { status: 400 },
+      );
+    }
+    if (spotUnavailable(cell.id)) {
+      return NextResponse.json(
+        { error: `Spot ${id} is no longer available. Please pick another.` },
         { status: 400 },
       );
     }

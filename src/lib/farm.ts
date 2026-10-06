@@ -58,6 +58,12 @@ export type FarmTree = {
   pos: number;
   /** The stored id of this tree's adoption, when it is open for adoption. */
   spotId?: string;
+  /**
+   * The tree is no longer standing. It stays on the map, and keeps its spot so
+   * the pairing of every other tree is untouched, but it cannot be adopted.
+   * Set with `"available": false` in farm-data.json.
+   */
+  unavailable: boolean;
 };
 
 /** Plots whose trees can be adopted this season. Add an id to open another. */
@@ -104,6 +110,7 @@ export const trees: FarmTree[] = data.trees.map((tree) => ({
   // A spot only counts while its plot is open, so closing a plot takes its
   // trees off the market without touching the pairing it will come back with.
   spotId: plotById.get(tree.plot)?.open ? spotOf(tree) : undefined,
+  unavailable: "available" in tree && tree.available === false,
 }));
 
 export const treeById = new Map(trees.map((tree) => [tree.id, tree]));
@@ -131,7 +138,14 @@ export function getPlot(id: string): FarmPlot | undefined {
 }
 
 /** Trees that can be adopted at all, whether or not they already are. */
-export const adoptableTrees = trees.filter((tree) => tree.spotId);
+export const adoptableTrees = trees.filter(
+  (tree) => tree.spotId && !tree.unavailable,
+);
+
+/** Whether a stored spot belongs to a tree that is no longer there to adopt. */
+export function spotUnavailable(spotId: string): boolean {
+  return Boolean(treeBySpot.get(spotId)?.unavailable);
+}
 
 /** The plots open this season, for the copy that names them. */
 export const openPlots = plots.filter((plot) => plot.open);

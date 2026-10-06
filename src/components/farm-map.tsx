@@ -70,7 +70,7 @@ type Props = {
   onHoldsChange?: (holds: TreeHolds) => void;
 };
 
-type Status = "available" | "reserved" | "adopted" | "closed";
+type Status = "available" | "reserved" | "adopted" | "closed" | "unavailable";
 type Filter = "all" | "available" | "taken";
 
 /** Radius of the drawn dot, in map units before the zoom is applied. */
@@ -132,6 +132,12 @@ const LOOKS: Record<
     halo: "var(--color-olive)",
   },
   closed: { fill: "var(--color-stone-light)", halo: "var(--color-stone)" },
+  // Hollow in stone: the tree is gone, so there is nothing to wait for.
+  unavailable: {
+    fill: "var(--color-paper-sunk)",
+    stroke: "var(--color-stone)",
+    halo: "var(--color-stone)",
+  },
 };
 
 const WORDS: Record<Status, string> = {
@@ -139,6 +145,7 @@ const WORDS: Record<Status, string> = {
   reserved: "on hold",
   adopted: "adopted",
   closed: "opens later",
+  unavailable: "not available",
 };
 
 export function FarmMap({
@@ -218,7 +225,9 @@ export function FarmMap({
 
   const statusOf = useCallback(
     (tree: FarmTree): Status =>
-      !tree.spotId
+      tree.unavailable
+        ? "unavailable"
+        : !tree.spotId
         ? "closed"
         : adopted.has(tree.spotId)
           ? "adopted"
@@ -383,7 +392,11 @@ export function FarmMap({
     )[e.key];
     if (!step) return;
     e.preventDefault();
-    const family = adoptableTrees.filter((t) => t.plotId === current.plotId);
+    // Every tree with a spot, so a keyboard can still land on one that is no
+    // longer available and hear why it cannot be chosen.
+    const family = trees.filter(
+      (t) => t.spotId && t.plotId === current.plotId,
+    );
     const next = family.find(
       (t) => t.row === current.row + step[0] && t.pos === current.pos + step[1],
     );
@@ -787,6 +800,10 @@ export function FarmMap({
             <Key className="border border-olive bg-paper" label="Adopted" />
             {onSelect && <Key className="bg-brick" label="Your pick" />}
             <Key className="bg-stone-light" label="Opens later" />
+            <Key
+              className="border border-stone bg-paper-sunk"
+              label="Not available"
+            />
             <Key className="bg-ink/60" label="Barn" />
           </div>
         </div>
@@ -1097,7 +1114,9 @@ function TreeCard({
                   ? "On hold"
                   : status === "adopted"
                     ? "Adopted"
-                    : "Opens later"
+                    : status === "unavailable"
+                      ? "Not available"
+                      : "Opens later"
           }
           strong={status === "available"}
         />

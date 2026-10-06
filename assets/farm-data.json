@@ -154,7 +154,8 @@
       "y": 1268.8,
       "row": 7,
       "pos": 4,
-      "spot": "A-R46-C55"
+      "spot": "A-R46-C55",
+      "available": false
     },
     {
       "id": "LN-006",
@@ -253,7 +254,8 @@
       "y": 1291.4,
       "row": 8,
       "pos": 5,
-      "spot": "A-R48-C50"
+      "spot": "A-R48-C50",
+      "available": false
     },
     {
       "id": "LN-017",
@@ -343,7 +345,8 @@
       "y": 1318.4,
       "row": 9,
       "pos": 5,
-      "spot": "A-R48-C60"
+      "spot": "A-R48-C60",
+      "available": false
     },
     {
       "id": "LN-027",
@@ -433,7 +436,8 @@
       "y": 1340.8,
       "row": 10,
       "pos": 5,
-      "spot": "A-R49-C56"
+      "spot": "A-R49-C56",
+      "available": false
     },
     {
       "id": "LN-037",
